@@ -47,5 +47,6 @@
     "backgroundColor": "#0F1117"
   },
   "cloud": true,
+  "lazyCodeLoading": "requiredComponents",
   "sitemapLocation": "sitemap.json"
 }
