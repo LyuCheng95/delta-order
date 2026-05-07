@@ -1,0 +1,172 @@
+<view class="page">
+
+  <!-- ── 顶栏 ── -->
+  <view class="hdr hdr-row" style="padding-top:calc({{statusH}}px + 16rpx)">
+    <view class="hdr-side">
+      <text class="back-link" bindtap="exitToBoss">← 退出</text>
+    </view>
+    <text class="xl bold hdr-title">⚔️ 打手中心</text>
+    <view class="hdr-side hdr-side-right">
+      <text class="settings-btn" bindtap="goProfile">⚙️</text>
+    </view>
+  </view>
+
+  <!-- 资料未完善提示 -->
+  <view wx:if="{{profileIncomplete}}" class="profile-banner" bindtap="goProfile">
+    <text class="t2 sm">⚠️ 资料未完善，暂不会出现在老板的打手列表</text>
+    <text class="t3 xs" style="color:var(--primary);margin-top:4rpx;display:block">点此完善 →</text>
+  </view>
+
+  <!-- ── Tab 导航 ── -->
+  <view class="tab-bar">
+    <view class="tab-item {{tab===0?'tab-active':''}}" bindtap="switchTab" data-idx="0">
+      接单大厅
+      <text wx:if="{{openOrders.length && tab!==0}}" class="tab-badge">{{openOrders.length}}</text>
+    </view>
+    <view class="tab-item {{tab===1?'tab-active':''}}" bindtap="switchTab" data-idx="1">已接单</view>
+    <view class="tab-item {{tab===2?'tab-active':''}}" bindtap="switchTab" data-idx="2">资金</view>
+  </view>
+
+  <!-- ═══════════════ Tab 0: 接单大厅 ═══════════════ -->
+  <scroll-view wx:if="{{tab===0}}" scroll-y class="tab-scroll"
+    refresher-enabled refresher-triggered="{{hallRefreshing}}"
+    bindrefresherrefresh="onHallRefresh">
+    <view class="pad">
+      <block wx:if="{{hallLoading}}">
+        <view wx:for="{{[1,2,3]}}" wx:key="*this" class="skeleton-card"/>
+      </block>
+      <block wx:elif="{{openOrders.length}}">
+        <view wx:for="{{openOrders}}" wx:key="_id" class="card order-card {{item.isDesignated?'order-card--designated':''}}" bindtap="goDetail" data-id="{{item._id}}">
+          <view class="row-between" style="margin-bottom:12rpx">
+            <view style="display:flex;align-items:center;gap:12rpx;flex:1;min-width:0">
+              <text class="bold flex1" style="line-height:1.4">{{item.service_snapshot.service_name}}</text>
+              <view wx:if="{{item.isDesignated}}" class="designated-badge">🎯 指定单</view>
+            </view>
+            <text class="tg bold" style="font-size:38rpx;white-space:nowrap;margin-left:16rpx">¥{{item.totalYuan}}</text>
+          </view>
+          <text class="t2 sm" style="display:block;margin-bottom:8rpx">{{item.service_snapshot.category_name}}</text>
+          <text wx:if="{{item.bossBrief}}" class="t2 sm" style="display:block;margin-bottom:8rpx;line-height:1.5;color:rgba(0,229,255,.85)">{{item.bossBrief}}</text>
+          <text wx:if="{{item.isDesignated && item.preferred_time}}" class="t2 sm" style="display:block;margin-bottom:16rpx;color:#ffd700">🕐 预约时间：{{item.preferred_time}}</text>
+          <view class="divider"/>
+          <view class="row-between" style="margin-top:12rpx">
+            <text class="t3 xs">{{item.timeStr}}</text>
+            <view style="display:flex;align-items:center;gap:20rpx">
+              <view wx:if="{{item.isDesignated}}" class="reject-btn" catchtap="rejectDesignated" data-id="{{item._id}}">拒绝</view>
+              <text class="t2 xs" style="color:rgba(0,229,255,.7)">接单 ›</text>
+            </view>
+          </view>
+        </view>
+      </block>
+      <block wx:else>
+        <view class="empty"><text class="empty-icon">🎯</text><text>暂无待接订单，下拉刷新</text></view>
+      </block>
+    </view>
+  </scroll-view>
+
+  <!-- ═══════════════ Tab 1: 已接单 ═══════════════ -->
+  <view wx:elif="{{tab===1}}" class="tab-scroll col">
+    <!-- 子 tab -->
+    <view class="sub-tab-bar">
+      <view wx:for="{{mySubTabs}}" wx:key="v"
+        class="sub-tab {{myTab===item.v?'sub-active':''}}"
+        bindtap="switchMyTab" data-v="{{item.v}}">{{item.l}}</view>
+    </view>
+    <scroll-view scroll-y class="flex1"
+      refresher-enabled refresher-triggered="{{myRefreshing}}"
+      bindrefresherrefresh="onMyRefresh">
+      <view class="pad">
+        <block wx:if="{{myLoading}}">
+          <view wx:for="{{[1,2,3]}}" wx:key="*this" class="skeleton-card"/>
+        </block>
+        <block wx:elif="{{myOrders.length}}">
+          <view wx:for="{{myOrders}}" wx:key="_id" class="card order-card" bindtap="goDetail" data-id="{{item._id}}">
+            <view class="row-between" style="margin-bottom:12rpx">
+              <text class="bold flex1" style="line-height:1.4">{{item.service_snapshot.service_name}}</text>
+              <text class="tg bold" style="font-size:38rpx">¥{{item.totalYuan}}</text>
+            </view>
+            <view class="row-between">
+              <text class="t2 sm">{{item.timeStr}}</text>
+              <text class="badge badge-{{item.status}}">{{item.statusLabel}}</text>
+            </view>
+          </view>
+        </block>
+        <block wx:else>
+          <view class="empty"><text class="empty-icon">📋</text><text>暂无记录</text></view>
+        </block>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- ═══════════════ Tab 2: 资金 ═══════════════ -->
+  <scroll-view wx:elif="{{tab===2}}" scroll-y class="tab-scroll">
+    <view class="pad">
+
+      <!-- 余额卡 -->
+      <view class="card hero-card">
+        <view style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4rpx">
+          <text class="t2 sm">可提现（元）</text>
+          <view style="display:flex;align-items:center;gap:6rpx">
+            <text class="t3 xs" style="color:#aaa">分成比例</text>
+            <text class="bold tc" style="font-size:28rpx">{{summary.sharePercent}}%</text>
+          </view>
+        </view>
+        <text class="hero-amt">{{summary.availableYuan}}</text>
+        <view class="stats-row">
+          <view class="stat-item">
+            <text class="stat-val tg">¥{{summary.earnedYuan}}</text>
+            <text class="t3 xs">累计完成</text>
+          </view>
+          <view class="stat-div"/>
+          <view class="stat-item">
+            <text class="stat-val tc">¥{{summary.pendingYuan}}</text>
+            <text class="t3 xs">提现中</text>
+          </view>
+          <view class="stat-div"/>
+          <view class="stat-item">
+            <text class="stat-val t2">¥{{summary.paidOutYuan}}</text>
+            <text class="t3 xs">已打款</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 提现 -->
+      <view class="section-label">申请提现</view>
+      <view class="card form-card">
+        <view class="row-between" style="margin-bottom:20rpx">
+          <text class="form-label" style="margin:0">收款银行卡</text>
+          <text class="t2 sm bold">{{summary.bankCardDisplay}}</text>
+        </view>
+        <text class="form-label">金额（元）</text>
+        <view class="input-row">
+          <input class="input-field flex1" type="digit" placeholder="{{amountPlaceholder}}"
+            value="{{amountYuan}}" bindinput="onAmount" bindfocus="onAmountFocus" bindblur="onAmountBlur"/>
+          <view class="link-btn" bindtap="fillAll">全部提现</view>
+        </view>
+        <text class="hint-text">提交后由管理员打款到上方银行卡，如需修改卡号请前往个人页面。</text>
+        <button class="btn btn-primary" style="width:100%;margin-top:24rpx"
+          loading="{{submitting}}" disabled="{{submitting}}"
+          bindtap="submitWithdraw">提交申请</button>
+      </view>
+
+      <!-- 提现记录 -->
+      <view class="section-label">提现记录</view>
+      <view wx:if="{{walletLoading}}" class="t3 sm" style="padding:24rpx 0">加载中…</view>
+      <view wx:elif="{{!withdrawRecords.length}}" class="empty">
+        <text class="empty-icon">📭</text><text>暂无提现记录</text>
+      </view>
+      <view wx:else>
+        <view wx:for="{{withdrawRecords}}" wx:key="_id" class="card rec-card">
+          <view class="row-between">
+            <text class="bold">¥{{item.amountYuan}}</text>
+            <text class="t2 sm">{{item.statusLabel}}</text>
+          </view>
+          <text class="t3 xs" style="display:block;margin-top:8rpx">{{item.timeStr}}</text>
+          <text wx:if="{{item.reject_reason}}" class="tr sm" style="display:block;margin-top:8rpx">拒绝原因：{{item.reject_reason}}</text>
+        </view>
+      </view>
+
+    </view>
+  </scroll-view>
+
+
+</view>

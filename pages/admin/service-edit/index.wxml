@@ -1,0 +1,123 @@
+<scroll-view scroll-y class="se-page">
+
+  <!-- ══ 基本信息 ══ -->
+  <view class="se-section">
+    <text class="se-section-title">基本信息</text>
+
+    <view class="se-field">
+      <text class="se-label">所属分类</text>
+      <picker mode="selector" range="{{catLabels}}" value="{{catIndex}}" bindchange="onPickCat">
+        <view class="se-picker {{!catLabels.length?'se-picker--empty':''}}">
+          <text>{{catLabels.length ? catLabels[catIndex] : '暂无分类，请先新增分类'}}</text>
+          <text class="se-picker-arrow">›</text>
+        </view>
+      </picker>
+    </view>
+
+    <view class="se-divider"/>
+
+    <view class="se-field">
+      <text class="se-label">服务名称</text>
+      <input class="se-input" value="{{name}}" placeholder="输入服务名称" bindinput="onName" />
+    </view>
+
+    <view class="se-divider"/>
+
+    <view class="se-field">
+      <text class="se-label">服务说明</text>
+      <textarea class="se-textarea" value="{{description}}" placeholder="简要描述，让老板快速了解此服务…" bindinput="onDesc" auto-height />
+    </view>
+  </view>
+
+  <!-- ══ 价格 ══ -->
+  <view class="se-section">
+    <text class="se-section-title">价格设置</text>
+
+    <view class="se-price-row">
+      <view class="se-field se-field--grow">
+        <text class="se-label">价格（元）</text>
+        <view class="se-price-input-wrap">
+          <text class="se-price-symbol">¥</text>
+          <input class="se-price-input" type="digit" value="{{priceYuan}}" placeholder="0.00" bindinput="onPrice" />
+        </view>
+      </view>
+      <view class="se-price-divider"/>
+      <view class="se-field se-field--unit">
+        <text class="se-label">计价单位</text>
+        <input class="se-input" value="{{price_unit}}" placeholder="次" bindinput="onUnit" />
+      </view>
+    </view>
+
+    <view class="se-divider"/>
+
+    <view class="se-field se-field--switch">
+      <view>
+        <text class="se-label" style="margin-bottom:4rpx">上架展示</text>
+        <text class="se-sublabel">关闭后老板端将不可见</text>
+      </view>
+      <switch checked="{{is_active}}" bindchange="onActiveChange" color="#00E5FF" />
+    </view>
+  </view>
+
+  <!-- ══ 下单表单字段 ══ -->
+  <view class="se-section">
+    <view class="se-section-header">
+      <text class="se-section-title" style="margin-bottom:0">下单表单</text>
+      <view class="se-add-btn" bindtap="addField">+ 添加字段</view>
+    </view>
+
+    <view wx:if="{{!formFields.length}}" class="se-fields-empty">
+      <text class="se-fields-empty-icon">📋</text>
+      <text class="se-fields-empty-text">暂无字段，点击「添加字段」</text>
+    </view>
+
+    <view wx:for="{{formFields}}" wx:key="uid" class="se-field-card">
+      <view class="se-field-card-hdr">
+        <view class="se-field-badge">字段 {{index + 1}}</view>
+        <view class="se-field-del" catchtap="removeField" data-index="{{index}}">删除</view>
+      </view>
+
+      <view class="se-field" style="margin-top:20rpx">
+        <text class="se-label">显示名称</text>
+        <input class="se-input input-sm" placeholder="如：游戏ID、当前段位"
+          value="{{item.label}}" bindinput="onFieldLabel" data-index="{{index}}" />
+      </view>
+
+      <view class="se-field-row" style="margin-top:16rpx">
+        <view class="se-field se-field--grow">
+          <text class="se-label">类型</text>
+          <picker mode="selector" range="{{fieldTypes}}" value="{{item.typeIndex}}"
+            bindchange="onFieldType" data-index="{{index}}">
+            <view class="se-picker se-picker--sm">
+              <text>{{fieldTypes[item.typeIndex]}}</text>
+              <text class="se-picker-arrow">›</text>
+            </view>
+          </picker>
+        </view>
+        <view class="se-field-row-divider"/>
+        <view class="se-field se-field--switch se-field--shrink">
+          <text class="se-label">必填</text>
+          <switch checked="{{item.required}}" bindchange="onFieldRequired"
+            data-index="{{index}}" color="#00E5FF"
+            style="transform:scale(.75);transform-origin:right center" />
+        </view>
+      </view>
+
+      <view wx:if="{{item.typeIndex===2}}" class="se-field" style="margin-top:16rpx">
+        <text class="se-label">选项（每行一个）</text>
+        <textarea class="se-textarea" placeholder="白银&#10;黄金&#10;铂金"
+          value="{{item.optionsText}}" bindinput="onFieldOptions"
+          data-index="{{index}}" auto-height />
+      </view>
+    </view>
+  </view>
+
+  <!-- ══ 操作按钮 ══ -->
+  <view class="se-actions">
+    <button class="btn btn-primary"
+      loading="{{saving}}" disabled="{{saving || !catLabels.length}}"
+      bindtap="onSave">保存服务</button>
+    <button wx:if="{{id}}" class="btn btn-danger" style="margin-top:20rpx" bindtap="onDelete">删除服务</button>
+  </view>
+
+</scroll-view>

@@ -1,0 +1,54 @@
+{
+  "pages": [
+    "pages/login/login",
+    "pages/boss/index/index",
+    "pages/boss/service-list/index",
+    "pages/boss/service-detail/index",
+    "pages/boss/payment/index",
+    "pages/boss/orders/index",
+    "pages/boss/order-detail/index",
+    "pages/boss/profile/index",
+    "pages/boss/recharge/index",
+    "pages/boss/hunters/index",
+    "pages/boss/hunter-profile/index",
+    "pages/hunter/index/index",
+    "pages/hunter/order-detail/index",
+    "pages/hunter/my-tasks/index",
+    "pages/hunter/wallet/index",
+    "pages/hunter/update-progress/index",
+    "pages/hunter/profile/index",
+    "pages/admin/index/index",
+    "pages/admin/orders/index",
+    "pages/admin/categories/index",
+    "pages/admin/services/index",
+    "pages/admin/hunters/index",
+    "pages/admin/withdrawals/index",
+    "pages/admin/category-edit/index",
+    "pages/admin/service-edit/index",
+
+    "pages/chat/list/index",
+    "pages/chat/room/index"
+  ],
+  "tabBar": {
+    "custom": true,
+    "color": "#5A6080",
+    "selectedColor": "#00E5FF",
+    "backgroundColor": "#121420",
+    "borderStyle": "black",
+    "list": [
+      { "pagePath": "pages/boss/index/index",   "text": "首页" },
+      { "pagePath": "pages/boss/hunters/index", "text": "打手" },
+      { "pagePath": "pages/boss/orders/index",  "text": "订单" },
+      { "pagePath": "pages/boss/profile/index", "text": "我的" }
+    ]
+  },
+  "window": {
+    "backgroundTextStyle": "dark",
+    "navigationBarBackgroundColor": "#0F1117",
+    "navigationBarTitleText": "上总裁电竞",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#0F1117"
+  },
+  "cloud": true,
+  "sitemapLocation": "sitemap.json"
+}

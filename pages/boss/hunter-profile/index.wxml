@@ -1,0 +1,98 @@
+<view class="page">
+  <block wx:if="{{loading}}">
+    <view class="skeleton-hero"/>
+    <view class="skeleton-block"/>
+    <view class="skeleton-block" style="height:120rpx"/>
+  </block>
+
+  <block wx:elif="{{hunter}}">
+    <!-- 头像 + 昵称 -->
+    <view class="hero-card">
+      <image class="avatar" src="{{hunter.avatar_url}}" mode="aspectFill"/>
+      <view class="hero-info">
+        <text class="bold lg">{{hunter.nickname}}</text>
+        <text wx:if="{{hunter.play_style}}" class="play-style t2 sm">{{hunter.play_style}}</text>
+        <view class="stats-row">
+          <text class="stat-item t3 xs">完成 {{hunter.completed_count}} 单</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 简介 -->
+    <view wx:if="{{hunter.bio}}" class="section-card">
+      <text class="section-label">自我介绍</text>
+      <text class="bio-text t2 sm">{{hunter.bio}}</text>
+    </view>
+
+    <!-- 擅长服务 -->
+    <view wx:if="{{serviceNames.length}}" class="section-card">
+      <text class="section-label">擅长服务</text>
+      <view class="tag-row">
+        <view wx:for="{{serviceNames}}" wx:key="*this" class="tag">{{item}}</view>
+      </view>
+    </view>
+
+    <!-- 战绩截图 -->
+    <view wx:if="{{hunter.portfolio.length}}" class="section-card">
+      <text class="section-label">战绩截图</text>
+      <view class="portfolio-grid">
+        <image
+          wx:for="{{hunter.portfolio}}"
+          wx:key="*this"
+          wx:for-item="pic"
+          src="{{pic}}"
+          mode="aspectFill"
+          class="port-img"
+          bindtap="previewPortfolio"
+          data-index="{{index}}"
+        />
+      </view>
+    </view>
+
+    <view style="height:200rpx"/>
+  </block>
+
+  <!-- 底部操作栏 -->
+  <view class="bottom-bar" wx:if="{{hunter && !loading}}">
+    <button class="btn btn-primary" style="flex:1" bindtap="openPicker">预约TA下单</button>
+  </view>
+
+  <!-- 时间选择 sheet -->
+  <view wx:if="{{showPicker}}" class="mask" bindtap="closePicker"/>
+  <view class="picker-sheet {{showPicker?'picker-sheet--visible':''}}">
+    <view class="picker-title">
+      <text class="bold sm">选择预约时间</text>
+      <text class="t3 sm" bindtap="closePicker" style="color:var(--text-3)">取消</text>
+    </view>
+
+    <text class="picker-section-label">日期</text>
+    <view class="chip-row">
+      <view
+        wx:for="{{dateOptions}}"
+        wx:key="value"
+        class="chip {{selectedDate===item.value?'chip--active':''}}"
+        bindtap="selectDate"
+        data-val="{{item.value}}"
+      >{{item.label}}</view>
+    </view>
+
+    <text class="picker-section-label">时间段</text>
+    <view class="chip-row chip-row--wrap">
+      <view
+        wx:for="{{timeSlots}}"
+        wx:key="value"
+        class="chip chip--time {{selectedTime===item.value?'chip--active':''}}"
+        bindtap="selectTime"
+        data-val="{{item.value}}"
+      >{{item.label}}</view>
+    </view>
+
+    <button
+      class="btn btn-primary"
+      style="width:100%;margin-top:32rpx"
+      disabled="{{!selectedDate||!selectedTime}}"
+      bindtap="confirmPicker"
+    >确认预约</button>
+    <view style="height:env(safe-area-inset-bottom)"/>
+  </view>
+</view>

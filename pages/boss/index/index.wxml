@@ -1,0 +1,130 @@
+<view class="home-root">
+  <scroll-view
+    scroll-y
+    class="home-scroll"
+    scroll-into-view="{{scrollInto}}"
+    scroll-with-animation="{{true}}"
+    enhanced="{{true}}"
+    show-scrollbar="{{false}}"
+  >
+    <view class="home-inner">
+
+      <!-- ══ Hero（header + banner 合并） ══ -->
+      <view class="hero">
+        <view class="hero-glow-tl"/>
+        <view class="hero-ring-outer"><view class="hero-ring-inner"/></view>
+
+        <!-- 顶行：品牌标签 + 用户信息 -->
+        <view class="hero-top">
+          <view class="hero-brand">上总裁电竞</view>
+          <view class="hero-user" bindtap="goProfile">
+            <text class="hero-nick">{{nickname}}</text>
+            <image class="hero-avatar" src="{{avatarUrl}}" mode="aspectFill"/>
+          </view>
+        </view>
+
+        <!-- 口号 -->
+        <view class="hero-slogan">你的金牌护航</view>
+        <view class="hero-divider"/>
+
+        <!-- 底行：标签 + 客服 -->
+        <view class="hero-bottom">
+          <view class="hero-tags">
+            <text class="stag">⚡ 秒速接单</text>
+            <text class="stag">🏆 全程护航</text>
+            <text class="stag">🔒 安全保障</text>
+          </view>
+          <view class="cs-btn" bindtap="previewCsQr" wx:if="{{csQrUrl}}">
+            <image class="cs-qr-img" src="{{csQrUrl}}" mode="aspectFill"/>
+            <text class="cs-text">扫码加客服</text>
+          </view>
+          <view class="cs-btn cs-btn--empty" wx:else>
+            <text class="cs-icon">💬</text>
+            <text class="cs-text">客服</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 进行中订单 -->
+      <view class="section" wx:if="{{activeOrders.length}}">
+        <view class="section-title-row">
+          <view class="section-title-wrap">
+            <view class="section-dot"/>
+            <text class="section-title">进行中</text>
+          </view>
+          <text class="link-more" bindtap="goOrders">全部 ›</text>
+        </view>
+        <scroll-view scroll-x class="orders-scroll" enhanced show-scrollbar="{{false}}">
+          <view class="orders-row">
+            <view wx:for="{{activeOrders}}" wx:key="_id" class="mini-card" bindtap="goOrderDetail" data-id="{{item._id}}">
+              <view class="mini-card-top">
+                <text class="mini-name">{{item.service_snapshot.service_name}}</text>
+                <text class="badge badge-in_progress">进行中</text>
+              </view>
+              <text class="mini-price">¥{{item.totalYuan}}</text>
+              <text class="mini-time">{{item.timeStr}}</text>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+
+      <!-- 服务列表 -->
+      <view class="section section--services">
+        <view class="section-title-wrap" style="margin-bottom:20rpx">
+          <view class="section-dot"/>
+          <text class="section-title" style="margin-bottom:0">全部服务</text>
+        </view>
+
+        <!-- 分类索引 -->
+        <scroll-view
+          wx:if="{{groups.length && !loading}}"
+          scroll-x class="cat-index-scroll" enhanced show-scrollbar="{{false}}">
+          <view class="cat-index-row">
+            <view
+              wx:for="{{groups}}" wx:for-index="gidx" wx:key="catId"
+              class="cat-chip {{activeCatIndex === gidx ? 'cat-chip--active' : ''}}"
+              bindtap="onCatIndexTap" data-index="{{gidx}}">
+              <text class="cat-chip-icon">{{item.icon}}</text>
+              <text class="cat-chip-name">{{item.catName}}</text>
+            </view>
+          </view>
+        </scroll-view>
+
+        <!-- 骨架屏 -->
+        <block wx:if="{{loading}}">
+          <view wx:for="{{[1,2,3,4,5]}}" wx:key="*this" class="svc-skeleton"/>
+        </block>
+
+        <!-- 分组服务 -->
+        <block wx:elif="{{groups.length}}">
+          <view wx:for="{{groups}}" wx:for-index="gidx" wx:key="catId"
+            id="cat-sec-{{gidx}}" class="cat-group">
+            <view class="cat-header">
+              <text class="cat-icon-sm">{{item.icon}}</text>
+              <text class="cat-name-sm">{{item.catName}}</text>
+              <view class="cat-header-line"/>
+            </view>
+            <view wx:for="{{item.services}}" wx:for-item="svc" wx:key="_id"
+              class="svc-card" bindtap="goSvcDetail" data-id="{{svc._id}}">
+              <view class="svc-card-accent"/>
+              <view class="svc-info">
+                <text class="svc-name">{{svc.name}}</text>
+                <text class="svc-desc" wx:if="{{svc.description}}">{{svc.description}}</text>
+              </view>
+              <view class="svc-right">
+                <view class="svc-price-row">
+                  <text class="svc-price">¥{{svc.priceYuan}}</text>
+                  <text class="svc-unit">/ {{svc.price_unit || '次'}}</text>
+                </view>
+                <view class="svc-btn">下单</view>
+              </view>
+            </view>
+          </view>
+        </block>
+
+        <view wx:else class="empty"><text class="t3">暂无服务</text></view>
+      </view>
+
+    </view>
+  </scroll-view>
+</view>

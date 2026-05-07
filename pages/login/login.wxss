@@ -1,0 +1,139 @@
+/* ── Page ── */
+.page {
+  background: var(--bg-base);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64rpx 48rpx;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Decorative background glow ── */
+.glow {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600rpx;
+  height: 600rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,229,255,0.07) 0%, transparent 70%);
+  pointer-events: none;
+}
+.glow::after {
+  content: '';
+  position: absolute;
+  bottom: -200rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 800rpx;
+  height: 400rpx;
+  background: radial-gradient(ellipse, rgba(0,100,180,0.06) 0%, transparent 70%);
+}
+
+/* ── Logo block ── */
+.logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 100rpx;
+  position: relative;
+  z-index: 1;
+}
+
+.logo-tri {
+  font-size: 120rpx;
+  line-height: 1;
+  color: var(--primary);
+  text-shadow: 0 0 60rpx rgba(0,229,255,0.5), 0 0 120rpx rgba(0,229,255,0.2);
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.logo-title {
+  font-size: 52rpx;
+  font-weight: 900;
+  color: var(--text-1);
+  letter-spacing: 6rpx;
+  text-shadow: 0 0 40rpx rgba(0,229,255,0.2);
+}
+
+.logo-sub {
+  letter-spacing: 3rpx;
+  opacity: 0.6;
+}
+
+/* ── Loading state ── */
+.loading-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24rpx;
+  position: relative;
+  z-index: 1;
+}
+
+.loading-ring {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  border: 4rpx solid rgba(0,229,255,0.15);
+  border-top-color: var(--primary);
+  animation: spin 0.8s linear infinite;
+  box-shadow: 0 0 20rpx rgba(0,229,255,0.2);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Error state ── */
+.error-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 0 48rpx;
+}
+
+.err-icon {
+  font-size: 80rpx;
+  line-height: 1;
+  margin-bottom: 8rpx;
+}
+
+.err-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+.err-msg {
+  line-height: 1.6;
+  color: var(--text-3);
+  word-break: break-all;
+}
+
+.retry-btn {
+  margin-top: 24rpx;
+  height: 88rpx;
+  padding: 0 64rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, #00E5FF 0%, #00B0C8 100%);
+  color: #0A0E18;
+  font-size: 30rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 28rpx rgba(0,229,255,0.4), 0 4rpx 16rpx rgba(0,0,0,0.3);
+}
+.retry-btn:active { opacity: 0.82; }

@@ -1,0 +1,8 @@
+.page {
+  background: var(--bg-base);
+  min-height: 100vh;
+  padding: 32rpx;
+  padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+.btn::after { border: none; }

@@ -1,0 +1,51 @@
+<view class="page">
+
+  <!-- 分类 Tab -->
+  <scroll-view scroll-x class="cat-bar" wx:if="{{!loading}}">
+    <view class="cat-inner">
+      <view class="cat-item {{selectedCat===''?'cat-active':''}}" bindtap="selectCat" data-cid="">全部</view>
+      <view
+        wx:for="{{cats}}" wx:key="_id"
+        class="cat-item {{selectedCat===item._id?'cat-active':''}}"
+        bindtap="selectCat" data-cid="{{item._id}}"
+      >{{item.name}}</view>
+    </view>
+  </scroll-view>
+
+  <!-- 骨架 -->
+  <block wx:if="{{loading}}">
+    <view wx:for="{{[1,2,3,4]}}" wx:key="*this" class="skeleton-card"/>
+  </block>
+
+  <!-- 服务列表（按分类分组） -->
+  <scroll-view wx:elif="{{displaySvcs.length}}" scroll-y class="svc-scroll">
+    <block wx:for="{{displaySvcs}}" wx:key="catId" wx:for-item="section">
+      <view class="section-header">{{section.catName}}</view>
+      <view class="svc-grid">
+        <view
+          wx:for="{{section.svcs}}" wx:key="_id" wx:for-item="svc"
+          class="svc-card"
+          bindtap="goDetail" data-id="{{svc._id}}"
+        >
+          <text class="svc-name bold">{{svc.name}}</text>
+          <text wx:if="{{svc.description}}" class="svc-desc">{{svc.description}}</text>
+          <view class="svc-footer">
+            <view class="price-row">
+              <text class="price-unit">¥</text>
+              <text class="price-num">{{svc.priceYuan}}</text>
+              <text class="price-per">/{{svc.price_unit}}</text>
+            </view>
+            <view class="order-btn">下单 ›</view>
+          </view>
+        </view>
+      </view>
+    </block>
+    <view style="height:60rpx"/>
+  </scroll-view>
+
+  <view wx:elif="{{!loading}}" class="empty">
+    <text class="empty-icon">📭</text>
+    <text>暂无服务</text>
+  </view>
+
+</view>

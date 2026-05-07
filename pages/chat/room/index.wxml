@@ -1,0 +1,119 @@
+<view class="page">
+  <!-- Messages area -->
+  <scroll-view
+    class="msg-scroll"
+    scroll-y
+    scroll-into-view="{{scrollIntoId}}"
+    scroll-with-animation="{{false}}"
+    enable-back-to-top
+  >
+    <view class="msg-list">
+      <view wx:if="{{loading}}" class="loading-hint">
+        <text class="t3 xs">加载中…</text>
+      </view>
+
+      <block wx:for="{{messages}}" wx:key="_id">
+        <!-- Timestamp separator -->
+        <view wx:if="{{item.timeStr}}" class="time-sep">
+          <text class="time-sep-text">{{item.timeStr}}</text>
+        </view>
+
+        <!-- System message -->
+        <view wx:if="{{item.isSystem}}" class="sys-msg">
+          <text class="sys-msg-text">{{item.content}}</text>
+        </view>
+
+        <!-- Regular bubble -->
+        <view wx:else class="msg-row {{item.isMine ? 'msg-row--mine' : ''}}">
+          <!-- Other's avatar -->
+          <image
+            wx:if="{{!item.isMine}}"
+            class="msg-avatar"
+            src="{{item.sender_snapshot.avatar_url}}"
+            mode="aspectFill"
+          />
+
+          <view class="bubble-col {{item.isMine ? 'bubble-col--mine' : ''}}">
+            <!-- Sender name (others only) -->
+            <view wx:if="{{!item.isMine}}" class="sender-line">
+              <text class="sender-name">{{item.sender_snapshot.nickname}}</text>
+              <text wx:if="{{item.sender_snapshot.role==='admin'}}" class="role-tag admin-tag">管理</text>
+              <text wx:elif="{{item.sender_snapshot.role==='hunter'}}" class="role-tag hunter-tag">打手</text>
+            </view>
+
+            <!-- Text bubble -->
+            <view wx:if="{{item.type==='text'}}"
+              class="bubble {{item.isMine ? 'bubble--mine' : 'bubble--other'}}">
+              <text class="bubble-text" user-select>{{item.content}}</text>
+            </view>
+
+            <!-- Image bubble -->
+            <view wx:elif="{{item.type==='image'}}"
+              class="bubble bubble--img {{item.isMine ? 'bubble--mine' : 'bubble--other'}}"
+              bindtap="previewImg" data-src="{{item.content}}">
+              <image class="msg-img" src="{{item.content}}" mode="aspectFill" lazy-load/>
+            </view>
+          </view>
+
+          <!-- Mine avatar -->
+          <image
+            wx:if="{{item.isMine}}"
+            class="msg-avatar"
+            src="{{item.sender_snapshot.avatar_url}}"
+            mode="aspectFill"
+          />
+        </view>
+      </block>
+
+      <!-- Scroll anchor -->
+      <view id="msg-{{messages[messages.length-1]._id}}" style="height:1rpx"/>
+    </view>
+  </scroll-view>
+
+  <!-- Input bar -->
+  <view class="input-bar">
+    <view class="input-row">
+      <!-- Emoji toggle -->
+      <view class="icon-btn" bindtap="toggleEmoji">
+        <text style="font-size:40rpx;line-height:1">😀</text>
+      </view>
+
+      <!-- Text input -->
+      <input
+        class="chat-input"
+        value="{{inputVal}}"
+        bindinput="onInput"
+        placeholder="说点什么…"
+        placeholder-class="input-ph"
+        confirm-type="send"
+        bindconfirm="sendText"
+        adjust-position
+        hold-keyboard
+      />
+
+      <!-- Image -->
+      <view class="icon-btn" bindtap="sendImage">
+        <text style="font-size:36rpx;line-height:1">🖼️</text>
+      </view>
+
+      <!-- Send button -->
+      <view
+        class="send-btn {{inputVal.length && !sending ? 'send-btn--active' : ''}}"
+        bindtap="sendText"
+      >
+        <text class="send-btn-text">发送</text>
+      </view>
+    </view>
+
+    <!-- Emoji picker -->
+    <view wx:if="{{showEmoji}}" class="emoji-picker">
+      <view
+        wx:for="{{emojis}}"
+        wx:key="*this"
+        class="emoji-item"
+        bindtap="tapEmoji"
+        data-emoji="{{item}}"
+      >{{item}}</view>
+    </view>
+  </view>
+</view>

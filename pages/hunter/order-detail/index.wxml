@@ -1,0 +1,175 @@
+<view class="page">
+  <scroll-view scroll-y class="detail-scroll">
+    <view wx:if="{{order}}" class="content">
+      <view class="status-hero">
+        <view class="status-dot dot-{{order.status}}"/>
+        <text class="xl bold">{{order.statusLabel}}</text>
+        <text class="t3 xs">{{order.order_no}}</text>
+      </view>
+      <view class="card" wx:if="{{order.proofUrls.length}}">
+        <text class="t2 sm sec-title">完成截图</text>
+        <scroll-view scroll-x class="proof-scroll">
+          <view class="proof-row">
+            <image
+              wx:for="{{order.proofUrls}}"
+              wx:key="*this"
+              wx:for-item="pic"
+              wx:for-index="pidx"
+              src="{{pic}}"
+              class="proof-thumb"
+              mode="aspectFill"
+              bindtap="previewProof"
+              data-urls="{{order.proofUrls}}"
+              data-i="{{pidx}}"
+            />
+          </view>
+        </scroll-view>
+        <text wx:if="{{order.status==='pending_settlement'}}" class="t3 xs" style="margin-top:12rpx;display:block">管理员确认后将完成订单并按规定分成入账。</text>
+      </view>
+      <view class="card" wx:if="{{order.formRows.length || order.remark}}">
+        <text class="t2 sm sec-title">玩家下单信息</text>
+        <text class="t3 xs" style="display:block;margin-bottom:16rpx;color:rgba(255,255,255,.45)">接单前请确认游戏账号、平台与备注</text>
+        <block wx:for="{{order.formRows}}" wx:key="key">
+          <view wx:if="{{index>0}}" class="divider"/>
+          <view class="info-row"><text class="t2 sm">{{item.label}}</text><text class="sm flex1" style="text-align:right;word-break:break-all">{{item.value}}</text></view>
+        </block>
+        <view wx:if="{{order.remark}}" class="divider"/>
+        <view wx:if="{{order.remark}}" class="info-row"><text class="t2 sm">备注</text><text class="sm flex1" style="text-align:right;word-break:break-all">{{order.remark}}</text></view>
+      </view>
+      <!-- 预约信息 -->
+      <view wx:if="{{order.preferred_time}}" class="card reservation-card">
+        <view class="info-row">
+          <text class="t2 sm">🕐 预约时间</text>
+          <text class="bold" style="color:#ffd700">{{order.preferred_time}}</text>
+        </view>
+      </view>
+
+      <view class="card">
+        <text class="t2 sm sec-title">服务详情</text>
+        <view class="info-row">
+          <text class="t2 sm">服务</text>
+          <view style="display:flex;align-items:center;gap:10rpx">
+            <text class="bold">{{order.service_snapshot.service_name}}</text>
+            <text wx:if="{{order.isCoHunter}}" class="co-badge">协同</text>
+          </view>
+        </view>
+        <view class="divider"/>
+        <view class="info-row"><text class="t2 sm">分类</text><text>{{order.service_snapshot.category_name}}</text></view>
+        <view class="divider"/>
+        <view class="info-row"><text class="t2 sm">金额</text><text class="tg bold" style="font-size:32rpx">¥{{order.totalYuan}}</text></view>
+        <block wx:if="{{order.hunter_display}}">
+          <view class="divider"/>
+          <view class="info-row">
+            <text class="t2 sm">本单陪玩师</text>
+            <view class="flex1" style="text-align:right">
+              <text class="sm">{{order.hunter_display.nickname}}</text>
+              <text class="t3 xs"> · ···{{order.hunter_display.openid_tail}}</text>
+            </view>
+          </view>
+        </block>
+        <view wx:if="{{order.earnYuan}}" class="divider"/>
+        <view wx:if="{{order.earnYuan}}" class="info-row"><text class="t2 sm">本单您的入账</text><text class="tg bold">¥{{order.earnYuan}}</text></view>
+      </view>
+      <!-- 订单群聊入口（进行中以后可用） -->
+      <view
+        wx:if="{{order.status==='in_progress'||order.status==='pending_settlement'||order.status==='completed'}}"
+        class="card chat-entry"
+        bindtap="goChat"
+      >
+        <view class="chat-entry-left">
+          <text style="font-size:40rpx;line-height:1">💬</text>
+          <view>
+            <text class="sm bold" style="display:block">订单群聊</text>
+            <text class="t3 xs">老板 · 陪玩师 · 客服</text>
+          </view>
+        </view>
+        <text class="t3 xs" style="color:var(--primary)">进入 ›</text>
+      </view>
+
+      <view class="card">
+        <text class="t2 sm sec-title">订单进度</text>
+        <view wx:if="{{logs.length}}" class="log-list">
+          <view wx:for="{{logs}}" wx:key="_id" class="log-item">
+            <view class="log-dot"/>
+            <view class="log-body"><view class="row-between"><text class="sm bold">{{item.action}}</text><text class="t3 xs">{{item.timeStr}}</text></view><text class="t2 sm" style="margin-top:6rpx;display:block">{{item.content}}</text></view>
+          </view>
+        </view>
+        <view wx:else class="empty" style="padding:24rpx 0"><text class="empty-icon" style="font-size:48rpx">📝</text><text class="sm">暂无进度</text></view>
+      </view>
+      <view style="height:180rpx"/>
+    </view>
+  </scroll-view>
+  <view class="bottom-bar" wx:if="{{order&&order.status==='paid'}}">
+    <button class="btn btn-primary" style="flex:1" loading="{{taking}}" disabled="{{taking}}" bindtap="takeOrder">接单</button>
+  </view>
+
+  <!-- 接单弹窗 -->
+  <view class="mask" wx:if="{{showTakeSheet}}" bindtap="closeTakeSheet"/>
+  <view class="sheet {{showTakeSheet?'sheet-show':''}}">
+    <view class="row-between" style="margin-bottom:20rpx">
+      <text class="lg bold">确认接单</text>
+      <text class="t2 sm" style="padding:8rpx" bindtap="closeTakeSheet">✕</text>
+    </view>
+
+    <!-- 搜索搭档 -->
+    <text class="t2 sm" style="display:block;margin-bottom:12rpx">选择搭档（可选）</text>
+    <input class="input-field" style="margin-bottom:16rpx" placeholder="搜索陪玩师昵称 / 微信号"
+      value="{{keyword}}" bindinput="onKeywordInput"/>
+
+    <!-- 打手列表 -->
+    <scroll-view scroll-y style="max-height:320rpx;margin-bottom:16rpx">
+      <view wx:if="{{!filteredHunters.length}}" class="t3 sm" style="padding:20rpx 0;text-align:center;color:var(--text-3)">暂无其他在职陪玩师</view>
+      <view wx:for="{{filteredHunters}}" wx:key="openid"
+        class="partner-row {{selectedPartner&&selectedPartner.openid===item.openid?'partner-selected':''}}"
+        bindtap="selectPartner" data-hunter="{{item}}">
+        <image style="width:56rpx;height:56rpx;border-radius:50%;flex-shrink:0" src="{{item.avatar_url}}"/>
+        <view style="flex:1;min-width:0;margin-left:16rpx">
+          <text class="bold sm" style="display:block">{{item.nickname}}</text>
+          <text wx:if="{{item.contact}}" class="t3 xs">{{item.contact}}</text>
+        </view>
+        <text wx:if="{{selectedPartner&&selectedPartner.openid===item.openid}}" style="color:var(--primary);font-size:36rpx">✓</text>
+      </view>
+    </scroll-view>
+
+    <!-- 分成比例（仅选了搭档时显示） -->
+    <block wx:if="{{selectedPartner}}">
+      <view class="row-between" style="margin-bottom:20rpx;align-items:center">
+        <text class="t2 sm">搭档分成比例（%）</text>
+        <view style="display:flex;align-items:center;gap:12rpx">
+          <text class="t2 sm">你 {{100-partnerSplit}}%</text>
+          <text class="t3 xs">·</text>
+          <text class="t2 sm">{{selectedPartner.nickname}} </text>
+          <input class="input-field" style="width:100rpx;text-align:center;padding:8rpx 12rpx"
+            type="number" value="{{partnerSplit}}" bindinput="onSplitInput" maxlength="3"/>
+          <text class="t2 sm">%</text>
+        </view>
+      </view>
+    </block>
+
+    <!-- 操作按钮：邀请模式 -->
+    <block wx:if="{{order.status==='in_progress'}}">
+      <button class="btn btn-primary" style="width:100%;margin-bottom:12rpx"
+        loading="{{taking}}" disabled="{{!selectedPartner}}" bindtap="confirmInvite">
+        {{selectedPartner ? '邀请「'+selectedPartner.nickname+'」为搭档' : '请先选择搭档'}}
+      </button>
+    </block>
+    <!-- 操作按钮：接单模式 -->
+    <block wx:else>
+      <button wx:if="{{selectedPartner}}" class="btn btn-primary" style="width:100%;margin-bottom:12rpx"
+        loading="{{taking}}" bindtap="confirmTake" data-withpartner="{{true}}">
+        与「{{selectedPartner.nickname}}」一起接单
+      </button>
+      <button class="btn btn-ghost" style="width:100%"
+        loading="{{taking}}" bindtap="confirmTake" data-withpartner="{{false}}">
+        单独接单
+      </button>
+    </block>
+  </view>
+  <view class="bottom-bar" wx:if="{{order&&order.status==='in_progress'}}">
+    <button class="btn btn-ghost" style="flex:1" bindtap="goUpdate">更新进度</button>
+    <button class="btn btn-primary" style="flex:1" loading="{{submitting}}" disabled="{{submitting}}" bindtap="onSubmitSettlement">上传完成截图</button>
+  </view>
+  <view class="tip-bar" wx:if="{{order&&order.status==='pending_settlement'}}">
+    <text class="t2 sm">已提交完成截图，等待管理员审核通过后入账</text>
+  </view>
+</view>

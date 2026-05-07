@@ -1,0 +1,144 @@
+.page { background: var(--bg-base); height: 100%; display: flex; flex-direction: column; }
+.page-scroll {
+  flex: 1; height: 0;
+  padding: 32rpx 32rpx calc(32rpx + 132rpx + constant(safe-area-inset-bottom));
+  padding: 32rpx 32rpx calc(32rpx + 132rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+/* ── 头像 ── */
+.avatar-wrap { position: relative; width: 100rpx; height: 100rpx; flex-shrink: 0; }
+.avatar-wrap:active { opacity: .75; }
+.avatar { width: 100rpx; height: 100rpx; border-radius: 50%; border: 3rpx solid rgba(255,255,255,.4); }
+.avatar-pencil {
+  position: absolute; bottom: -6rpx; right: -6rpx;
+  width: 40rpx; height: 40rpx; border-radius: 50%;
+  background: var(--primary);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22rpx; line-height: 1;
+  box-shadow: 0 0 10rpx rgba(0,229,255,.5);
+}
+
+/* ── 总裁贝名片 ── */
+.zc-card {
+  background: linear-gradient(135deg, #1a3a6e 0%, #0d1f42 60%, #162040 100%);
+  border-radius: 24rpx; padding: 36rpx; margin-bottom: 28rpx;
+  position: relative; overflow: hidden;
+  border: 1rpx solid rgba(0,229,255,.2);
+  box-shadow: 0 8rpx 40rpx rgba(0,0,0,.5), inset 0 1rpx 0 rgba(0,229,255,.08);
+}
+.zc-card::before {
+  content: ''; position: absolute; right: -40rpx; top: -40rpx;
+  width: 240rpx; height: 240rpx; border-radius: 50%;
+  background: rgba(255,255,255,.04); pointer-events: none;
+}
+.zc-card::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2rpx;
+  background: linear-gradient(90deg, transparent 0%, rgba(0,229,255,.5) 50%, transparent 100%);
+}
+
+/* top row: avatar + nick + vip badge */
+.zc-top { display: flex; align-items: center; gap: 24rpx; margin-bottom: 28rpx; }
+
+/* VIP badge */
+.vip-badge {
+  flex-shrink: 0; padding: 6rpx 18rpx; border-radius: 999rpx;
+  font-size: 22rpx; font-weight: 700; letter-spacing: 1rpx;
+}
+.vip-badge-1 {
+  background: linear-gradient(135deg, #1a3060, #112244);
+  color: #7eb3ff; border: 1rpx solid rgba(100,160,255,.4);
+  box-shadow: 0 0 16rpx rgba(100,160,255,.2);
+}
+.vip-badge-2 {
+  background: linear-gradient(135deg, #2a1a50, #1a0e36);
+  color: #c070ff; border: 1rpx solid rgba(180,100,255,.4);
+  box-shadow: 0 0 16rpx rgba(180,100,255,.2);
+}
+.vip-badge-3 {
+  background: linear-gradient(135deg, #3a2200, #221500);
+  color: var(--gold); border: 1rpx solid rgba(255,184,0,.4);
+  box-shadow: 0 0 20rpx rgba(255,184,0,.25);
+}
+
+/* divider */
+.zc-divider { height: 1rpx; background: rgba(255,255,255,.08); margin: 0 0 24rpx; }
+
+/* balance row */
+.zc-balance-row { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24rpx; }
+.zc-label { font-size: 24rpx; color: rgba(255,255,255,.5); margin-bottom: 6rpx; }
+.zc-amount { font-size: 64rpx; font-weight: 900; color: #fff; letter-spacing: -2rpx; line-height: 1; }
+.zc-unit { font-size: 24rpx; color: rgba(255,255,255,.5); font-weight: 400; }
+.zc-spent { font-size: 28rpx; font-weight: 700; color: rgba(0,229,255,.8); }
+
+/* progress */
+.zc-progress-wrap { margin-bottom: 24rpx; }
+.zc-progress-bar {
+  width: 100%; height: 8rpx; border-radius: 999rpx;
+  background: rgba(255,255,255,.1); margin-bottom: 10rpx; overflow: hidden;
+}
+.zc-progress-fill {
+  height: 100%; border-radius: 999rpx;
+  background: linear-gradient(90deg, #00E5FF, #00B0C8);
+  box-shadow: 0 0 8rpx rgba(0,229,255,.5);
+  transition: width .4s ease;
+}
+.zc-progress-tip { font-size: 22rpx; color: rgba(255,255,255,.4); }
+
+/* action buttons */
+.zc-actions { display: flex; gap: 16rpx; margin-top: 4rpx; }
+.zc-btn-primary {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  height: 80rpx; border-radius: 999rpx;
+  background: linear-gradient(135deg, #00E5FF, #00B0C8);
+  color: #0A0E18; font-size: 28rpx; font-weight: 700;
+  box-shadow: 0 4rpx 20rpx rgba(0,229,255,.35);
+}
+.zc-btn-primary:active { opacity: .8; }
+.zc-btn-ghost {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  height: 80rpx; border-radius: 999rpx;
+  background: transparent; color: rgba(255,255,255,.75);
+  border: 1rpx solid rgba(255,255,255,.2);
+  font-size: 28rpx; font-weight: 600;
+}
+.zc-btn-ghost:active { background: rgba(255,255,255,.06); }
+
+/* ── 分区标题 ── */
+.sec {
+  display: block; padding: 32rpx 0 14rpx;
+  font-size: 22rpx; font-weight: 700; letter-spacing: 2rpx;
+  color: var(--text-3); text-transform: uppercase;
+}
+
+/* ── 菜单卡片（更多区） ── */
+.menu-list { padding: 0 32rpx; }
+.menu-row {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 96rpx; border-bottom: 1rpx solid var(--border-light);
+  font-size: 28rpx; color: var(--text-1);
+}
+.menu-row:last-child { border-bottom: none; }
+.menu-row:active { background: var(--bg-hover); margin: 0 -32rpx; padding: 0 32rpx; }
+
+/* 复用 app.wxss 的 .card，但这里的 menu-item 加 active 状态 */
+.card.menu-item { display: flex; align-items: center; margin-bottom: 16rpx; padding: 28rpx 32rpx; }
+.card.menu-item:active { background: var(--bg-hover); }
+
+/* ── 弹窗 mask + sheet ── */
+.mask {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.65); z-index: 1000;
+}
+.sheet {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--bg-card);
+  border-radius: 28rpx 28rpx 0 0;
+  padding: 40rpx 32rpx calc(40rpx + env(safe-area-inset-bottom));
+  z-index: 1001;
+  transform: translateY(100%);
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+  border-top: 1rpx solid var(--border);
+  box-shadow: 0 -8rpx 48rpx rgba(0,0,0,.5);
+}
+.sheet-show { transform: translateY(0); }

@@ -1,0 +1,46 @@
+<view class="page">
+  <view class="inner">
+
+    <text class="title">完善你的资料</text>
+    <text class="sub">设置后将显示在订单中</text>
+
+    <!-- 头像 -->
+    <view class="avatar-section">
+      <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+        <image
+          class="avatar {{avatarChosen ? 'avatar-chosen' : ''}}"
+          src="{{avatarUrl || '/images/default-avatar.png'}}"
+          mode="aspectFill"
+        />
+        <view class="avatar-hint" wx:if="{{!avatarChosen}}">
+          <text class="avatar-hint-icon">📷</text>
+          <text class="avatar-hint-text">点击使用微信头像</text>
+        </view>
+        <view class="avatar-check" wx:if="{{avatarChosen}}">✓</view>
+      </button>
+    </view>
+
+    <!-- 昵称 -->
+    <view class="field-wrap">
+      <text class="field-label">昵称</text>
+      <input
+        class="field-input"
+        type="nickname"
+        placeholder="点击填入微信昵称"
+        value="{{nickname}}"
+        bindinput="onNicknameInput"
+        maxlength="20"
+      />
+    </view>
+
+    <button
+      class="btn btn-primary done-btn"
+      loading="{{saving}}"
+      disabled="{{!nickname}}"
+      bindtap="onDone"
+    >进入平台</button>
+
+    <text class="skip" bindtap="onSkip">跳过，稍后再设置</text>
+
+  </view>
+</view>

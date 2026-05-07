@@ -1,0 +1,56 @@
+<view class="page">
+  <scroll-view
+    scroll-y class="list-scroll"
+    refresher-enabled
+    refresher-triggered="{{refreshing}}"
+    bindrefresherrefresh="onRefresh"
+  >
+    <view class="list">
+      <block wx:if="{{loading}}">
+        <view wx:for="{{[1,2,3]}}" wx:key="*this" class="skeleton-row"/>
+      </block>
+
+      <block wx:elif="{{convs.length}}">
+        <view
+          wx:for="{{convs}}"
+          wx:key="_id"
+          class="conv-item {{item.hasUnread ? 'conv-item--unread' : ''}}"
+          bindtap="goRoom"
+          data-id="{{item._id}}"
+          data-name="{{item.displayName}}"
+          data-orderid="{{item.order_id}}"
+          hover-class="conv-item--hover"
+        >
+          <!-- Icon -->
+          <view class="conv-icon-wrap">
+            <view class="conv-icon">
+              <text class="conv-icon-emoji">🎮</text>
+            </view>
+            <view wx:if="{{item.hasUnread}}" class="conv-unread-dot"/>
+          </view>
+
+          <!-- Body -->
+          <view class="conv-body">
+            <view class="conv-row-top">
+              <text class="conv-name">{{item.displayName || '群聊'}}</text>
+              <text class="conv-time">{{item.lastTimeStr}}</text>
+            </view>
+            <view class="conv-row-bottom">
+              <text class="conv-preview {{item.hasUnread ? 'conv-preview--unread' : ''}}">{{item.last_msg || '暂无消息'}}</text>
+              <view wx:if="{{item.order_id}}" class="conv-tag">订单</view>
+              <view wx:elif="{{item.type === 'private'}}" class="conv-tag conv-tag--private">私信</view>
+            </view>
+          </view>
+        </view>
+      </block>
+
+      <block wx:else>
+        <view class="empty">
+          <text class="empty-icon">💬</text>
+          <text class="sm t2">暂无群聊</text>
+          <text class="xs t3" style="margin-top:4rpx">在订单详情页点击「订单群聊」进入</text>
+        </view>
+      </block>
+    </view>
+  </scroll-view>
+</view>

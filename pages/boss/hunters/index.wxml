@@ -1,0 +1,66 @@
+<view class="page">
+
+  <!-- 选搭档模式提示 -->
+  <view wx:if="{{selectMode}}" class="select-mode-banner">
+    <text class="t2 sm">🎯 请选择搭档打手</text>
+    <text class="t3 xs" style="margin-top:4rpx;display:block;color:var(--text-3)">点击选中</text>
+  </view>
+
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <text class="search-icon">🔍</text>
+    <input class="search-input" placeholder="搜索昵称、简介、风格…" value="{{keyword}}" bindinput="onKeyword"/>
+  </view>
+
+  <!-- 骨架 -->
+  <scroll-view wx:if="{{loading}}" scroll-y class="grid-scroll">
+    <view class="hunter-grid">
+      <view wx:for="{{[1,2,3,4,5,6]}}" wx:key="*this" class="skeleton-card"/>
+    </view>
+  </scroll-view>
+
+  <!-- 空 -->
+  <view wx:elif="{{!filteredHunters.length}}" class="empty">
+    <text class="empty-icon">🎮</text>
+    <text class="t2 sm">暂无陪玩师</text>
+  </view>
+
+  <!-- 双列卡牌 -->
+  <scroll-view wx:else scroll-y class="grid-scroll">
+    <view class="hunter-grid">
+      <view
+        wx:for="{{filteredHunters}}"
+        wx:key="openid"
+        class="hunter-card"
+        bindtap="goHunterProfile"
+        data-openid="{{item.openid}}"
+        data-nickname="{{item.nickname}}"
+      >
+        <!-- 头像 -->
+        <view class="avatar-wrap">
+          <image class="avatar" src="{{item.avatar_url}}" mode="aspectFill"/>
+          <view wx:if="{{item.affinity > 0}}" class="affinity-dot">❤️{{item.affinity}}</view>
+        </view>
+
+        <!-- 昵称 + 完成单数 -->
+        <view class="name-row">
+          <text class="bold sm name-text">{{item.nickname}}</text>
+          <view class="count-badge">{{item.completed_count}}单</view>
+        </view>
+
+        <!-- 风格 -->
+        <text wx:if="{{item.play_style}}" class="play-style">{{item.play_style}}</text>
+
+        <!-- 简介 -->
+        <text wx:if="{{item.bio}}" class="bio">{{item.bio}}</text>
+
+        <!-- 服务标签 -->
+        <view wx:if="{{item.service_tags.length}}" class="tag-row">
+          <view wx:for="{{item.service_tags}}" wx:key="*this" wx:for-item="tag" class="tag">{{tag}}</view>
+        </view>
+      </view>
+    </view>
+    <view style="height:40rpx"/>
+  </scroll-view>
+
+</view>

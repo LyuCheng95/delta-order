@@ -1,0 +1,42 @@
+<view class="page">
+  <scroll-view scroll-x class="tabs">
+    <view class="tab-row">
+      <view wx:for="{{tabs}}" wx:key="v" class="tab {{activeTab===item.v?'active':''}}" bindtap="switchTab" data-v="{{item.v}}">{{item.l}}</view>
+    </view>
+  </scroll-view>
+  <scroll-view scroll-y class="list-scroll" refresher-enabled refresher-triggered="{{refreshing}}" bindrefresherrefresh="onRefresh">
+    <view class="list">
+      <block wx:if="{{loading}}">
+        <view wx:for="{{[1,2,3]}}" wx:key="*this" class="skeleton-card"/>
+      </block>
+      <block wx:elif="{{orders.length}}">
+        <view wx:for="{{orders}}" wx:key="_id" class="card order-card">
+          <view bindtap="goDetail" data-id="{{item._id}}">
+            <view class="row-between">
+              <text class="bold flex1">{{item.service_snapshot.service_name}}</text>
+              <view class="row" style="align-items:center;gap:12rpx">
+                <text class="badge badge-{{item.status}}">{{item.statusLabel}}</text>
+                <view class="dot-menu-wrap" catchtap="toggleMenu" data-id="{{item._id}}">
+                  <text class="dot-menu-icon">⋮</text>
+                  <view wx:if="{{menuOpenId===item._id}}" class="dot-dropdown">
+                    <view wx:if="{{item.canRefund}}" class="dot-item" catchtap="onAdminRefund" data-id="{{item._id}}">退款</view>
+                    <view class="dot-item dot-item-danger" catchtap="onAdminDeleteOrder" data-id="{{item._id}}">删除</view>
+                  </view>
+                </view>
+              </view>
+            </view>
+            <text class="t3 xs" style="margin:8rpx 0">{{item.order_no}}</text>
+            <view class="divider"/>
+            <view class="row-between" style="margin-top:4rpx">
+              <text class="t3 xs">{{item.timeStr}}</text>
+              <text class="tg bold" style="font-size:32rpx">¥{{item.totalYuan}}</text>
+            </view>
+          </view>
+        </view>
+      </block>
+      <block wx:else>
+        <view class="empty"><text class="empty-icon">📋</text><text>暂无订单</text></view>
+      </block>
+    </view>
+  </scroll-view>
+</view>

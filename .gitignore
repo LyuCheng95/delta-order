@@ -1,0 +1,11 @@
+# 微信支付私钥证书（绝对不能上传）
+cloudfunctions/payment/apiclient_key.pem
+cloudfunctions/payment/apiclient_cert.pem
+cloudfunctions/payment/apiclient_cert.p12
+
+# 微信开发者工具私有配置
+project.private.config.json
+
+# Node
+node_modules/
+*/node_modules/

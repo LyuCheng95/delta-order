@@ -1,0 +1,38 @@
+<view class="page">
+  <view class="add-bar">
+    <button class="btn btn-primary btn-sm" bindtap="goAdd">+ 新增分类</button>
+  </view>
+
+  <scroll-view scroll-y class="list-scroll"
+    refresher-enabled refresher-triggered="{{refreshing}}"
+    bindrefresherrefresh="onRefresh">
+    <view class="list">
+      <block wx:if="{{loading}}">
+        <view wx:for="{{[1,2,3,4]}}" wx:key="*this" class="skeleton-card"/>
+      </block>
+      <view wx:elif="{{!cats.length}}" class="empty">
+        <text class="empty-icon">📂</text>
+        <text>暂无分类，点击「新增分类」</text>
+      </view>
+      <block wx:else>
+        <view wx:for="{{cats}}" wx:key="_id" class="card cat-card">
+        <view class="card-left" bindtap="goEdit" data-id="{{item._id}}">
+          <text class="cat-icon">{{item.icon || '🎮'}}</text>
+          <view class="cat-info">
+            <text class="bold md">{{item.name}}</text>
+            <text class="t3 sm">排序 {{item.sort_order}}</text>
+          </view>
+        </view>
+        <view class="card-right">
+          <text class="t3 xs" style="margin-right:12rpx">{{item.is_active ? '上架' : '下架'}}</text>
+          <switch checked="{{item.is_active}}" bindchange="onToggleActive"
+            data-id="{{item._id}}" color="#00E5FF" style="transform:scale(.75);transform-origin:right center"/>
+          <view class="edit-btn" bindtap="goEdit" data-id="{{item._id}}">
+            <text class="t3 sm">编辑 ›</text>
+          </view>
+        </view>
+        </view>
+      </block>
+    </view>
+  </scroll-view>
+</view>

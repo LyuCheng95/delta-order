@@ -1,0 +1,34 @@
+<scroll-view scroll-y class="se-page">
+
+  <view class="se-section">
+    <text class="se-section-title">分类信息</text>
+
+    <view class="se-field">
+      <text class="se-label">分类名称</text>
+      <input class="se-input" value="{{name}}" placeholder="输入分类名称" bindinput="onName" />
+    </view>
+
+    <view class="se-divider"/>
+
+    <view class="se-field">
+      <text class="se-label">图标（Emoji）</text>
+      <input class="se-input se-icon-input" value="{{icon}}" placeholder="🎮" bindinput="onIcon" />
+    </view>
+
+    <view class="se-divider"/>
+
+    <view class="se-field se-field--switch">
+      <view>
+        <text class="se-label" style="margin-bottom:4rpx">上架展示</text>
+        <text class="se-sublabel">关闭后此分类在老板端不可见</text>
+      </view>
+      <switch checked="{{is_active}}" bindchange="onActiveChange" color="#00E5FF" />
+    </view>
+  </view>
+
+  <view class="se-actions">
+    <button class="btn btn-primary" loading="{{saving}}" disabled="{{saving}}" bindtap="onSave">保存分类</button>
+    <button wx:if="{{id}}" class="btn btn-danger" style="margin-top:20rpx" bindtap="onDelete">删除分类</button>
+  </view>
+
+</scroll-view>

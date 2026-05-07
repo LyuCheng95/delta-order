@@ -1,0 +1,109 @@
+<view class="page">
+
+  <!-- ══ LEFT: 分类列 ══ -->
+  <view class="cat-col">
+    <scroll-view scroll-y="{{dragging !== 'cat'}}" class="cat-scroll">
+
+      <!-- skeleton -->
+      <block wx:if="{{loading}}">
+        <view wx:for="{{[1,2,3,4]}}" wx:key="*this" class="cat-skel"/>
+      </block>
+
+      <!-- empty -->
+      <view wx:elif="{{!cats.length}}" class="empty-col">
+        <text class="t3 xs" style="text-align:center;line-height:1.6">暂无分类</text>
+      </view>
+
+      <!-- list -->
+      <block wx:else>
+        <view wx:for="{{cats}}" wx:key="_id" wx:for-index="ci"
+          class="cat-item {{selectedCatId===item._id?'cat-item--sel':''}} {{dragging==='cat'&&dragIdx===ci?'cat-item--drag':''}}"
+          bindtap="switchCat" data-id="{{item._id}}">
+          <view class="drag-grip"
+            catchtouchstart="onDragStart" catchtouchmove="onDragMove" catchtouchend="onDragEnd"
+            data-side="cat" data-index="{{ci}}">
+            <text class="grip-icon">⠿</text>
+          </view>
+          <view class="cat-body">
+            <text class="cat-emoji">{{item.icon || '🎮'}}</text>
+            <text class="cat-name {{!item.is_active?'cat-name--off':''}}">{{item.name}}</text>
+          </view>
+          <view wx:if="{{!item.is_active}}" class="off-dot"/>
+        </view>
+      </block>
+    </scroll-view>
+
+    <view class="col-footer" bindtap="goAddCat">
+      <text class="tc sm">+ 分类</text>
+    </view>
+  </view>
+
+  <!-- ══ RIGHT: 服务列 ══ -->
+  <view class="svc-col">
+
+    <!-- header -->
+    <view class="svc-hdr">
+      <text class="svc-hdr-title bold">{{selectedCatName || '请选择分类'}}</text>
+      <view wx:if="{{selectedCatId}}" class="btn btn-primary btn-sm" bindtap="goAdd">+ 服务</view>
+    </view>
+
+    <!-- scroll list -->
+    <scroll-view scroll-y="{{dragging !== 'svc'}}" class="svc-scroll"
+      refresher-enabled="{{dragging !== 'svc'}}" refresher-triggered="{{refreshing}}"
+      bindrefresherrefresh="onRefresh">
+
+      <!-- no cat selected -->
+      <view wx:if="{{!selectedCatId}}" class="empty-col">
+        <text class="t3 sm">← 先选一个分类</text>
+      </view>
+
+      <!-- loading -->
+      <view wx:elif="{{loading}}" class="svc-list">
+        <view wx:for="{{[1,2,3]}}" wx:key="*this" class="svc-skel"/>
+      </view>
+
+      <!-- empty cat -->
+      <view wx:elif="{{!filteredSvcs.length}}" class="empty-col">
+        <text style="font-size:56rpx">📭</text>
+        <text class="t3 xs" style="margin-top:12rpx">暂无服务</text>
+        <view class="btn btn-ghost btn-sm" style="margin-top:20rpx" bindtap="goAdd">新增服务</view>
+      </view>
+
+      <!-- service items -->
+      <view wx:else class="svc-list">
+        <view wx:for="{{filteredSvcs}}" wx:key="_id" wx:for-index="si"
+          class="svc-item {{dragging==='svc'&&dragIdx===si?'svc-item--drag':''}}">
+          <view class="drag-grip"
+            catchtouchstart="onDragStart" catchtouchmove="onDragMove" catchtouchend="onDragEnd"
+            data-side="svc" data-index="{{si}}">
+            <text class="grip-icon">⠿</text>
+          </view>
+          <view class="svc-info" bindtap="goEdit" data-id="{{item._id}}">
+            <text class="bold" style="font-size:26rpx;line-height:1.4">{{item.name}}</text>
+            <text class="t3 xs" style="margin-top:4rpx">¥{{item.priceZb}} · {{item.price_unit}}</text>
+          </view>
+          <switch checked="{{item.is_active}}" bindchange="onToggleActive"
+            data-id="{{item._id}}" color="#00E5FF"
+            style="transform:scale(.65);transform-origin:right center;margin-right:-12rpx"/>
+        </view>
+      </view>
+
+    </scroll-view>
+  </view>
+
+</view>
+
+<!-- Drag ghost -->
+<view wx:if="{{ghostItem}}" class="drag-ghost drag-ghost--{{dragging}}" style="top:{{ghostY}}px">
+  <text class="grip-icon">⠿</text>
+  <block wx:if="{{dragging==='cat'}}">
+    <text class="cat-emoji">{{ghostItem.icon || '🎮'}}</text>
+    <text class="cat-name">{{ghostItem.name}}</text>
+  </block>
+  <block wx:else>
+    <view class="svc-info">
+      <text class="bold" style="font-size:26rpx">{{ghostItem.name}}</text>
+      <text class="t3 xs" style="margin-top:4rpx">¥{{ghostItem.priceZb}} · {{ghostItem.price_unit}}</text>
+    </view>
+  </block>
+</view>

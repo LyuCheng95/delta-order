@@ -1,0 +1,7 @@
+<view class="page">
+  <view class="card" style="margin-bottom:16rpx">
+    <text class="t2 sm" style="display:block;margin-bottom:10rpx">进度说明 <text style="color:var(--red)">*</text></text>
+    <textarea class="textarea-field" placeholder="描述当前进度，如：已上号，开始代练..." value="{{content}}" bindinput="onInput" maxlength="300" style="min-height:200rpx"/>
+  </view>
+  <button class="btn btn-primary" style="width:100%" loading="{{submitting}}" disabled="{{submitting}}" bindtap="onSubmit">提交进度</button>
+</view>

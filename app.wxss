@@ -1,0 +1,171 @@
+/* ===== 全局 CSS 变量 ===== */
+page {
+  height: 100%;
+  overflow-x: hidden;
+  --primary:        #00E5FF;
+  --primary-dim:    #00B8CC;
+  --primary-glow:   rgba(0,229,255,0.15);
+  --primary-subtle: rgba(0,229,255,0.08);
+  --bg-base:        #0F1117;
+  --bg-card:        #1A1D27;
+  --bg-elevated:    #22263A;
+  --bg-hover:       #252938;
+  --gold:           #FFB800;
+  --red:            #FF4D4D;
+  --green:          #00D68F;
+  --orange:         #FF8C00;
+  --text-1:         #FFFFFF;
+  --text-2:         #A0A8C0;
+  --text-3:         #5A6080;
+  --border:         #252938;
+  --border-light:   #1E2235;
+  --shadow-card:    0 4rpx 28rpx rgba(0,0,0,0.35);
+  background: #0F1117;
+  color: #FFFFFF;
+  font-size: 28rpx;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
+/* ===== 通用卡片 ===== */
+.card {
+  background: var(--bg-card);
+  border-radius: 24rpx;
+  padding: 32rpx;
+  border: 1rpx solid var(--border);
+  box-shadow: var(--shadow-card);
+}
+
+/* ===== 按钮 ===== */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 96rpx;
+  border-radius: 999rpx;
+  font-size: 32rpx;
+  font-weight: 700;
+  border: none;
+  box-sizing: border-box;
+}
+.btn::after { border: none; }
+
+.btn-primary {
+  background: linear-gradient(135deg, #00E5FF 0%, #00B0C8 100%);
+  color: #0A0E18;
+  box-shadow: 0 0 28rpx rgba(0,229,255,0.4), 0 4rpx 16rpx rgba(0,0,0,0.25);
+}
+.btn-primary:active { opacity: 0.82; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--primary);
+  border: 2rpx solid rgba(0,229,255,0.6);
+}
+.btn-ghost:active { background: rgba(0,229,255,0.08); }
+
+.btn-danger {
+  background: transparent;
+  color: var(--red);
+  border: 2rpx solid rgba(255,77,77,0.6);
+}
+.btn-danger:active { background: rgba(255,77,77,0.08); }
+
+.btn-sm {
+  height: 64rpx;
+  font-size: 24rpx;
+  padding: 0 32rpx;
+}
+.btn[disabled] {
+  background: var(--bg-elevated);
+  color: var(--text-3);
+  box-shadow: none;
+}
+
+/* ===== 状态标签 ===== */
+.badge {
+  display: inline-block;
+  padding: 6rpx 18rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  letter-spacing: 0.5rpx;
+}
+.badge-pending_payment { color: #6A7090; background: rgba(90,96,128,0.12); border: 1rpx solid rgba(90,96,128,0.2); }
+.badge-paid            { color: #00E5FF; background: rgba(0,229,255,0.08); border: 1rpx solid rgba(0,229,255,0.2); }
+.badge-in_progress     { color: #FF8C00; background: rgba(255,140,0,0.1);  border: 1rpx solid rgba(255,140,0,0.25); }
+.badge-pending_settlement { color: #FFB800; background: rgba(255,184,0,0.1);  border: 1rpx solid rgba(255,184,0,0.25); }
+.badge-completed       { color: #00D68F; background: rgba(0,214,143,0.1);  border: 1rpx solid rgba(0,214,143,0.22); }
+.badge-disputed        { color: #FF4D4D; background: rgba(255,77,77,0.1);  border: 1rpx solid rgba(255,77,77,0.25); }
+.badge-refunded        { color: #A0A8C0; background: rgba(160,168,192,0.1); border: 1rpx solid rgba(160,168,192,0.18); }
+.badge-cancelled       { color: #5A6080; background: rgba(90,96,128,0.08); border: 1rpx solid rgba(90,96,128,0.15); }
+
+/* ===== 输入框 ===== */
+.input-field {
+  background: var(--bg-elevated);
+  border: 1rpx solid var(--border);
+  border-radius: 16rpx;
+  height: 88rpx;
+  padding: 0 24rpx;
+  color: var(--text-1);
+  font-size: 28rpx;
+  width: 100%;
+  box-sizing: border-box;
+}
+.textarea-field {
+  background: var(--bg-elevated);
+  border: 1rpx solid var(--border);
+  border-radius: 16rpx;
+  padding: 24rpx;
+  color: var(--text-1);
+  font-size: 28rpx;
+  width: 100%;
+  min-height: 160rpx;
+  box-sizing: border-box;
+}
+
+/* ===== 文字工具类 ===== */
+.t1  { color: var(--text-1); }
+.t2  { color: var(--text-2); }
+.t3  { color: var(--text-3); }
+.tc  { color: var(--primary); }
+.tg  { color: var(--gold); }
+.tr  { color: var(--red); }
+.tgr { color: var(--green); }
+.bold { font-weight: 700; }
+.xs { font-size: 22rpx; }
+.sm { font-size: 24rpx; }
+.md { font-size: 32rpx; }
+.lg { font-size: 36rpx; }
+.xl { font-size: 44rpx; }
+
+/* ===== 分割线 ===== */
+.divider {
+  height: 1rpx;
+  background: rgba(255,255,255,0.06);
+  margin: 16rpx 0;
+}
+
+/* ===== 空状态 ===== */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80rpx 32rpx;
+  color: var(--text-3);
+  font-size: 24rpx;
+}
+.empty-icon { font-size: 80rpx; margin-bottom: 16rpx; }
+
+/* ===== Flex ===== */
+.row  { display: flex; align-items: center; }
+.row-between { display: flex; align-items: center; justify-content: space-between; }
+.col  { display: flex; flex-direction: column; }
+.flex1 { flex: 1; }
+
+/* ===== 订单状态卡片着色 ===== */
+.order-s-paid            { background: linear-gradient(105deg, rgba(0,229,255,0.06) 0%, var(--bg-card) 35%); border-color: rgba(0,229,255,0.18); }
+.order-s-in_progress     { background: linear-gradient(105deg, rgba(255,140,0,0.08) 0%, var(--bg-card) 35%); border-color: rgba(255,140,0,0.22); }
+.order-s-pending_settlement { background: linear-gradient(105deg, rgba(255,184,0,0.07) 0%, var(--bg-card) 35%); border-color: rgba(255,184,0,0.2); }
+.order-s-completed       { background: linear-gradient(105deg, rgba(0,214,143,0.06) 0%, var(--bg-card) 35%); border-color: rgba(0,214,143,0.18); }
+.order-s-disputed        { background: linear-gradient(105deg, rgba(255,77,77,0.07)  0%, var(--bg-card) 35%); border-color: rgba(255,77,77,0.22); }

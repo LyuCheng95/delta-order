@@ -1,0 +1,80 @@
+.page {
+  min-height: 100vh;
+  background: var(--bg-base);
+  display: flex; align-items: center; justify-content: center;
+}
+.inner {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 60rpx 48rpx 80rpx;
+  width: 100%;
+}
+
+.title {
+  font-size: 48rpx; font-weight: 900; color: var(--text-1);
+  margin-bottom: 12rpx; letter-spacing: 2rpx;
+}
+.sub {
+  font-size: 26rpx; color: var(--text-3); margin-bottom: 64rpx;
+}
+
+/* ── 头像 ── */
+.avatar-section { margin-bottom: 56rpx; }
+.avatar-btn {
+  position: relative;
+  width: 180rpx; height: 180rpx;
+  padding: 0; margin: 0;
+  background: transparent; border: none;
+  display: flex; align-items: center; justify-content: center;
+}
+.avatar-btn::after { border: none; }
+.avatar {
+  width: 180rpx; height: 180rpx; border-radius: 50%;
+  border: 4rpx solid rgba(0,229,255,.25);
+  background: var(--bg-card);
+}
+.avatar-chosen {
+  border-color: rgba(0,229,255,.7);
+  box-shadow: 0 0 28rpx rgba(0,229,255,.3);
+}
+.avatar-hint {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: rgba(0,0,0,.55);
+  border-radius: 0 0 90rpx 90rpx;
+  padding: 10rpx 0 16rpx;
+  display: flex; flex-direction: column; align-items: center; gap: 4rpx;
+}
+.avatar-hint-icon { font-size: 28rpx; line-height: 1; }
+.avatar-hint-text { font-size: 18rpx; color: #fff; }
+.avatar-check {
+  position: absolute; bottom: 4rpx; right: 4rpx;
+  width: 44rpx; height: 44rpx; border-radius: 50%;
+  background: var(--primary); color: #0A0E18;
+  font-size: 24rpx; font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 12rpx rgba(0,229,255,.5);
+}
+
+/* ── 昵称 ── */
+.field-wrap {
+  width: 100%; margin-bottom: 48rpx;
+}
+.field-label {
+  display: block; font-size: 24rpx; font-weight: 600;
+  color: var(--text-2); margin-bottom: 14rpx; letter-spacing: 1rpx;
+}
+.field-input {
+  width: 100%; box-sizing: border-box;
+  background: var(--bg-card);
+  border: 1rpx solid var(--border);
+  border-radius: 16rpx;
+  padding: 28rpx 28rpx;
+  font-size: 30rpx; color: var(--text-1);
+}
+.field-input:focus { border-color: rgba(0,229,255,.5); }
+
+.done-btn { width: 100%; margin-bottom: 28rpx; }
+
+.skip {
+  font-size: 24rpx; color: var(--text-3);
+  text-decoration: underline;
+}

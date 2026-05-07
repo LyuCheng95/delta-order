@@ -1,0 +1,13 @@
+.page { background: var(--bg-base); height: 100%; display: flex; flex-direction: column; }
+.add-bar { padding: 24rpx 32rpx; background: var(--bg-base); border-bottom: 1rpx solid var(--border); }
+.add-bar .btn { width: 100%; }
+.list-scroll { flex: 1; min-height: 0; }
+.list { padding: 32rpx; display: flex; flex-direction: column; gap: 16rpx; }
+.cat-card { display: flex; align-items: center; justify-content: space-between; padding: 28rpx 32rpx; }
+.card-left { display: flex; align-items: center; gap: 24rpx; flex: 1; min-width: 0; }
+.cat-icon { font-size: 56rpx; flex-shrink: 0; }
+.cat-info { display: flex; flex-direction: column; gap: 6rpx; }
+.card-right { display: flex; align-items: center; flex-shrink: 0; }
+.edit-btn { padding: 8rpx 0 8rpx 16rpx; }
+.skeleton-card { height: 120rpx; background: linear-gradient(90deg,#1A1D27 25%,#22263A 50%,#1A1D27 75%); background-size: 400% 100%; animation: sh 1.5s infinite; border-radius: 24rpx; }
+@keyframes sh { 0%{background-position:100% 0} 100%{background-position:-100% 0} }

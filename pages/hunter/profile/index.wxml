@@ -1,0 +1,182 @@
+<scroll-view scroll-y class="profile-scroll">
+  <view class="page">
+
+    <!-- 完整度检查卡 -->
+    <view class="checklist-card">
+      <view class="checklist-header">
+        <text class="bold sm">主页完整度</text>
+        <text wx:if="{{profileReady}}" class="ready-badge">✅ 已上线</text>
+        <text wx:else class="pending-badge">⏸ 未显示在打手列表</text>
+      </view>
+      <view class="checklist-items">
+        <view class="check-item">
+          <text class="check-icon {{checks.avatar?'done':''}}">{{checks.avatar?'✓':'○'}}</text>
+          <text class="check-label {{checks.avatar?'done':''}}">头像</text>
+        </view>
+        <view class="check-item">
+          <text class="check-icon {{checks.nickname?'done':''}}">{{checks.nickname?'✓':'○'}}</text>
+          <text class="check-label {{checks.nickname?'done':''}}">昵称</text>
+        </view>
+        <view class="check-item">
+          <text class="check-icon {{checks.bio?'done':''}}">{{checks.bio?'✓':'○'}}</text>
+          <text class="check-label {{checks.bio?'done':''}}">简介</text>
+        </view>
+        <view class="check-item">
+          <text class="check-icon {{checks.services?'done':''}}">{{checks.services?'✓':'○'}}</text>
+          <text class="check-label {{checks.services?'done':''}}">服务</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 头像 + 昵称 -->
+    <view class="hero-card">
+      <view class="avatar-wrap" bindtap="onChangeAvatar">
+        <image class="avatar" src="{{avatarUrl}}" mode="aspectFill"/>
+        <view class="avatar-overlay">
+          <text class="avatar-cam">📷</text>
+        </view>
+      </view>
+      <view class="hero-info">
+        <view wx:if="{{!editingNick}}" class="name-row">
+          <text class="hero-name bold">{{nickname || '（未设置昵称）'}}</text>
+          <text class="edit-link" bindtap="toggleEditNick">改名</text>
+        </view>
+        <view wx:else class="name-edit-row">
+          <input class="nick-input" value="{{nicknameInput}}" bindinput="onNicknameInput" maxlength="20" focus="{{editingNick}}"/>
+          <text class="edit-link" bindtap="saveNickname" style="color:var(--primary)">{{savingNick?'…':'保存'}}</text>
+          <text class="edit-link" bindtap="toggleEditNick" style="color:var(--text-3)">取消</text>
+        </view>
+        <view class="hero-stats">
+          <text class="stat-item">完成 <text class="tc bold">{{completedCount}}</text> 单</text>
+          <text class="stat-sep">·</text>
+          <text class="stat-item">分成 <text class="tg bold">{{sharePercent}}%</text></text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 自我介绍 -->
+    <view class="section-card">
+      <view class="section-title-row">
+        <text class="section-title">自我介绍 <text class="required">*</text></text>
+        <text class="char-count">{{bioLen}}/100</text>
+      </view>
+      <textarea
+        class="profile-textarea"
+        placeholder="让老板更了解你，比如：擅长哪些地图、游戏风格、接单时间段…"
+        value="{{bio}}"
+        bindinput="onBioInput"
+        maxlength="100"
+        auto-height
+      />
+    </view>
+
+    <!-- 我的风格 -->
+    <view class="section-card">
+      <view class="section-title-row">
+        <text class="section-title">我的风格</text>
+        <text class="char-count">{{playStyleLen}}/50</text>
+      </view>
+      <input
+        class="profile-input"
+        placeholder="例：认真高效、手速快、全能位、擅长机密图…"
+        value="{{playStyle}}"
+        bindinput="onPlayStyleInput"
+        maxlength="50"
+      />
+    </view>
+
+    <!-- 战绩截图 -->
+    <view class="section-card">
+      <view class="section-title-row">
+        <text class="section-title">战绩截图</text>
+        <text class="char-count">{{portfolio.length}}/9</text>
+      </view>
+      <view class="portfolio-grid">
+        <view wx:for="{{portfolio}}" wx:key="*this" wx:for-index="pidx" class="portfolio-item">
+          <image src="{{item}}" mode="aspectFill" class="portfolio-img" bindtap="previewPortfolio" data-i="{{pidx}}"/>
+          <view class="portfolio-del" catchtap="removePortfolio" data-i="{{pidx}}">✕</view>
+        </view>
+        <view wx:if="{{portfolio.length < 9}}" class="portfolio-add" bindtap="onAddPortfolio">
+          <text class="portfolio-add-icon">＋</text>
+          <text class="t3 xs" style="color:var(--text-3)">上传</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 愿意接的服务 -->
+    <view class="section-card">
+      <view class="section-title-row">
+        <text class="section-title">愿意接的服务 <text class="required">*</text></text>
+        <text class="char-count">已选 {{serviceTags.length}}</text>
+      </view>
+      <text class="t3 xs" style="display:block;margin-bottom:20rpx;color:var(--text-3)">勾选有把握完成的服务，老板指定时会参考</text>
+      <view wx:if="{{!allGroups.length}}" class="t3 sm" style="color:var(--text-3);padding:16rpx 0">加载中…</view>
+      <view wx:for="{{allGroups}}" wx:key="catId" class="cat-block">
+        <view class="cat-header" bindtap="toggleCat" data-catid="{{item.catId}}">
+          <view style="display:flex;align-items:center;gap:12rpx">
+            <text>{{item.icon}}</text>
+            <text class="sm bold">{{item.catName}}</text>
+          </view>
+          <view style="display:flex;align-items:center;gap:12rpx">
+            <text class="t3 xs" style="color:var(--text-3)">已选 {{item.selectedCount}}/{{item.services.length}}</text>
+            <text class="cat-arrow {{catsExpanded[item.catId]?'cat-arrow--open':''}}">›</text>
+          </view>
+        </view>
+        <view wx:if="{{catsExpanded[item.catId]}}" class="svc-list">
+          <view wx:for="{{item.services}}" wx:for-item="svc" wx:key="_id" class="svc-row" bindtap="toggleService" data-svcid="{{svc._id}}">
+            <view class="svc-check {{svc.selected?'svc-check--on':''}}">
+              <text wx:if="{{svc.selected}}" class="svc-tick">✓</text>
+            </view>
+            <text class="sm flex1">{{svc.name}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 账户信息 -->
+    <view class="section-card">
+      <text class="section-title" style="margin-bottom:16rpx;display:block">账户信息</text>
+      <view class="info-row">
+        <text class="t2 sm">微信号</text>
+        <text class="sm" style="color:var(--text-2)">{{contact || '未填写'}}</text>
+      </view>
+      <view class="divider"/>
+      <view class="info-row">
+        <text class="t2 sm">银行卡</text>
+        <view style="display:flex;align-items:center;gap:16rpx">
+          <text class="sm" style="color:var(--text-2)">{{bankCard}}</text>
+          <text class="edit-link" bindtap="toggleEditCard">{{editingCard?'取消':'修改'}}</text>
+        </view>
+      </view>
+      <view wx:if="{{editingCard}}" style="margin-top:16rpx">
+        <input class="profile-input" type="number" placeholder="输入新银行卡号" value="{{bankCardInput}}" bindinput="onBankCardInput" maxlength="19"/>
+        <button class="btn btn-primary btn-sm" style="margin-top:12rpx;width:100%" loading="{{savingCard}}" bindtap="saveBankCard">保存银行卡</button>
+      </view>
+    </view>
+
+    <!-- 保存按钮 -->
+    <view style="padding:0 32rpx 32rpx">
+      <button
+        class="btn {{profileReady?'btn-primary':'btn-disabled'}}"
+        style="width:100%"
+        loading="{{saving}}"
+        disabled="{{saving}}"
+        bindtap="onSave"
+      >保存资料</button>
+      <text wx:if="{{!profileReady}}" class="save-hint">完成头像、昵称、简介、服务后方可保存</text>
+    </view>
+
+    <!-- 底部导航 -->
+    <view class="bottom-links">
+      <view class="bottom-link" bindtap="goTasks">📋 接单记录</view>
+      <view class="bottom-link-sep"/>
+      <view class="bottom-link" bindtap="goWallet">💰 钱包</view>
+      <view class="bottom-link-sep"/>
+      <view class="bottom-link" bindtap="switchBoss">🎮 切换老板</view>
+      <view class="bottom-link-sep"/>
+      <view class="bottom-link danger" bindtap="onLogout">退出</view>
+    </view>
+
+    <view style="height:60rpx"/>
+  </view>
+</scroll-view>

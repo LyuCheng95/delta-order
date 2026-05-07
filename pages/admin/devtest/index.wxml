@@ -1,0 +1,334 @@
+<scroll-view scroll-y class="dt-page">
+
+  <view class="dt-banner">
+    <text class="dt-banner-title">🔧 开发测试面板</text>
+    <text class="dt-banner-sub">仅在开发环境使用，测试完整业务流程（支付除外）</text>
+  </view>
+
+  <!-- ══ 模拟打手 ══ -->
+  <view class="dt-section">
+    <text class="dt-section-title">模拟数据</text>
+
+    <view class="dt-step">
+      <view class="dt-step-meta">
+        <view class="dt-step-num">★</view>
+        <view class="dt-step-info">
+          <text class="dt-step-name">生成模拟打手</text>
+          <text class="dt-step-desc">写入 4 个资料完整的假打手，可在老板端打手列表查看（重复执行会更新）</text>
+        </view>
+      </view>
+      <view class="dt-step-foot">
+        <view class="dt-result {{s_seedHunters.status}}" wx:if="{{s_seedHunters.result}}">{{s_seedHunters.result}}</view>
+        <button class="dt-btn {{s_seedHunters.status==='ok'?'dt-btn--ok':''}}"
+          loading="{{s_seedHunters.status==='running'}}"
+          disabled="{{s_seedHunters.status==='running'}}"
+          catchtap="runSeedHunters">
+          {{s_seedHunters.status==='ok' ? '✓ 已完成' : '生成'}}
+        </button>
+      </view>
+    </view>
+
+    <view class="dt-divider"/>
+
+    <view class="dt-step">
+      <view class="dt-step-meta">
+        <view class="dt-step-num">✕</view>
+        <view class="dt-step-info">
+          <text class="dt-step-name">删除模拟打手</text>
+          <text class="dt-step-desc">清除上面生成的 4 个假打手账号</text>
+        </view>
+      </view>
+      <view class="dt-step-foot">
+        <view class="dt-result {{s_deleteHunters.status}}" wx:if="{{s_deleteHunters.result}}">{{s_deleteHunters.result}}</view>
+        <button class="dt-btn dt-btn--danger {{s_deleteHunters.status==='ok'?'dt-btn--ok':''}}"
+          loading="{{s_deleteHunters.status==='running'}}"
+          disabled="{{s_deleteHunters.status==='running'}}"
+          catchtap="runDeleteHunters">
+          {{s_deleteHunters.status==='ok' ? '✓ 已删除' : '删除'}}
+        </button>
+      </view>
+    </view>
+
+  </view>
+
+  <!-- ══ 准备工作 ══ -->
+  <view class="dt-section">
+    <text class="dt-section-title">准备工作</text>
+
+    <view class="dt-step">
+      <view class="dt-step-meta">
+        <view class="dt-step-num">①</view>
+        <view class="dt-step-info">
+          <text class="dt-step-name">三身份授权</text>
+          <text class="dt-step-desc">将当前账号设为 boss + hunter + admin（仅在 users 集合恰好 1 条时有效）</text>
+        </view>
+      </view>
+      <view class="dt-step-foot">
+        <view class="dt-result {{s_grantRoles.status}}" wx:if="{{s_grantRoles.result}}">{{s_grantRoles.result}}</view>
+        <button class="dt-btn {{s_grantRoles.status==='ok'?'dt-btn--ok':''}}"
+          loading="{{s_grantRoles.status==='running'}}"
+          disabled="{{s_grantRoles.status==='running'}}"
+          catchtap="runGrantRoles">
+          {{s_grantRoles.status==='ok' ? '✓ 已完成' : '执行'}}
+        </button>
+      </view>
+    </view>
+
+    <view class="dt-divider"/>
+
+    <view class="dt-step">
+      <view class="dt-step-meta">
+        <view class="dt-step-num">②</view>
+        <view class="dt-step-info">
+          <text class="dt-step-name">注入测试余额</text>
+          <text class="dt-step-desc">直接写入 500 总裁贝，跳过充值审批（覆盖现有余额）</text>
+        </view>
+      </view>
+      <view class="dt-step-foot">
+        <view class="dt-result {{s_injectBalance.status}}" wx:if="{{s_injectBalance.result}}">{{s_injectBalance.result}}</view>
+        <button class="dt-btn {{s_injectBalance.status==='ok'?'dt-btn--ok':''}}"
+          loading="{{s_injectBalance.status==='running'}}"
+          disabled="{{s_injectBalance.status==='running'}}"
+          catchtap="runInjectBalance">
+          {{s_injectBalance.status==='ok' ? '✓ 已完成' : '执行'}}
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- ══ 流程 A: 老板下单 ══ -->
+  <view class="dt-section">
+    <text class="dt-section-title">流程 A — 老板下单</text>
+
+    <view class="dt-step">
+      <view class="dt-step-meta">
+        <view class="dt-step-num">③</view>
+        <view class="dt-step-info">
+          <text class="dt-step-name">创建测试订单</text>
+          <text class="dt-step-desc">状态直接为 paid，无需真实支付，金额 150 分</text>
+        </view>
+      </view>
+      <view class="dt-step-foot">
+        <view class="dt-result {{s_createOrder.status}}" wx:if="{{s_createOrder.result}}">{{s_createOrder.result}}</view>
+        <button class="dt-btn {{s_createOrder.status==='ok'?'dt-btn--ok':''}}"
+          loading="{{s_createOrder.status==='running'}}"
+          disabled="{{s_createOrder.status==='running'}}"
+          catchtap="runCreateOrder">
+          {{s_createOrder.status==='ok' ? '✓ 已完成' : '执行'}}
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- ══ 流程 B: 打手接单 ══ -->
+  <view class="dt-section">
+    <text class="dt-section-title">流程 B — 打手接单</text>
+
+    <view class="dt-step">
+      <view class="dt-step-meta">
+        <view class="dt-step-num">④</view>
+        <view class="dt-step-info">
+          <text class="dt-step-name">打手接单</text>
+          <text class="dt-step-desc">当前账号（hunter 身份）接下步骤③创建的订单</text>
+        </view>
+      </view>
+      <view class="dt-step-foot">
+        <view class="dt-result {{s_takeOrder.status}}" wx:if="{{s_takeOrder.result}}">{{s_takeOrder.result}}</view>
+        <button class="dt-btn {{s_takeOrder.status==='ok'?'dt-btn--ok':''}}"
+          loading="{{s_takeOrder.status==='running'}}"
+          disabled="{{s_takeOrder.status==='running' || !testOrderId}}"
+          catchtap="runTakeOrder">
+          {{s_takeOrder.status==='ok' ? '✓ 已完成' : (testOrderId ? '执行' : '先完成步骤③')}}
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- ══ 流程 C: 结单审核 ══ -->
+  <view class="dt-section">
+    <text class="dt-section-title">流程 C — 结单审核</text>
+
+    <view class="dt-step">
+      <view class="dt-step-meta">
+        <view class="dt-step-num">⑤</view>
+        <view class="dt-step-info">
+          <text class="dt-step-name">提交结单</text>
+          <text class="dt-step-desc">模拟上传截图（占位符），将订单推入「待审核」</text>
+        </view>
+      </view>
+      <view class="dt-step-foot">
+        <view class="dt-result {{s_submitSettlement.status}}" wx:if="{{s_submitSettlement.result}}">{{s_submitSettlement.result}}</view>
+        <button class="dt-btn {{s_submitSettlement.status==='ok'?'dt-btn--ok':''}}"
+          loading="{{s_submitSettlement.status==='running'}}"
+          disabled="{{s_submitSettlement.status==='running' || !testOrderId}}"
+          catchtap="runSubmitSettlement">
+          {{s_submitSettlement.status==='ok' ? '✓ 已完成' : (testOrderId ? '执行' : '先完成步骤③')}}
+        </button>
+      </view>
+    </view>
+
+    <view class="dt-divider"/>
+
+    <view class="dt-step">
+      <view class="dt-step-meta">
+        <view class="dt-step-num">⑥</view>
+        <view class="dt-step-info">
+          <text class="dt-step-name">管理员确认结单</text>
+          <text class="dt-step-desc">按打手分成比例（默认 70%）写入 hunter_earn_fen</text>
+        </view>
+      </view>
+      <view class="dt-step-foot">
+        <view class="dt-result {{s_confirmSettlement.status}}" wx:if="{{s_confirmSettlement.result}}">{{s_confirmSettlement.result}}</view>
+        <button class="dt-btn {{s_confirmSettlement.status==='ok'?'dt-btn--ok':''}}"
+          loading="{{s_confirmSettlement.status==='running'}}"
+          disabled="{{s_confirmSettlement.status==='running' || !testOrderId}}"
+          catchtap="runConfirmSettlement">
+          {{s_confirmSettlement.status==='ok' ? '✓ 已完成' : (testOrderId ? '执行' : '先完成步骤③')}}
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- ══ 流程 D: 打手提现 ══ -->
+  <view class="dt-section">
+    <text class="dt-section-title">流程 D — 打手提现</text>
+
+    <view class="dt-step">
+      <view class="dt-step-meta">
+        <view class="dt-step-num">⑦</view>
+        <view class="dt-step-info">
+          <text class="dt-step-name">申请提现 1 元</text>
+          <text class="dt-step-desc">从打手已结单收益中申请提现 100 分（1 元）</text>
+        </view>
+      </view>
+      <view class="dt-step-foot">
+        <view class="dt-result {{s_requestWithdraw.status}}" wx:if="{{s_requestWithdraw.result}}">{{s_requestWithdraw.result}}</view>
+        <button class="dt-btn {{s_requestWithdraw.status==='ok'?'dt-btn--ok':''}}"
+          loading="{{s_requestWithdraw.status==='running'}}"
+          disabled="{{s_requestWithdraw.status==='running'}}"
+          catchtap="runRequestWithdraw">
+          {{s_requestWithdraw.status==='ok' ? '✓ 已完成' : '执行'}}
+        </button>
+      </view>
+    </view>
+
+    <view class="dt-divider"/>
+
+    <view class="dt-step">
+      <view class="dt-step-meta">
+        <view class="dt-step-num">⑧</view>
+        <view class="dt-step-info">
+          <text class="dt-step-name">管理员标记已打款</text>
+          <text class="dt-step-desc">批量处理所有待打款的提现申请</text>
+        </view>
+      </view>
+      <view class="dt-step-foot">
+        <view class="dt-result {{s_payWithdraw.status}}" wx:if="{{s_payWithdraw.result}}">{{s_payWithdraw.result}}</view>
+        <button class="dt-btn {{s_payWithdraw.status==='ok'?'dt-btn--ok':''}}"
+          loading="{{s_payWithdraw.status==='running'}}"
+          disabled="{{s_payWithdraw.status==='running'}}"
+          catchtap="runPayWithdraw">
+          {{s_payWithdraw.status==='ok' ? '✓ 已完成' : '执行'}}
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- ══ 流程 E: 老板充值 ══ -->
+  <view class="dt-section">
+    <text class="dt-section-title">流程 E — 老板充值</text>
+
+    <view class="dt-step">
+      <view class="dt-step-meta">
+        <view class="dt-step-num">⑨</view>
+        <view class="dt-step-info">
+          <text class="dt-step-name">申请充值 10 总裁贝</text>
+          <text class="dt-step-desc">创建一条待审核的充值申请</text>
+        </view>
+      </view>
+      <view class="dt-step-foot">
+        <view class="dt-result {{s_requestRecharge.status}}" wx:if="{{s_requestRecharge.result}}">{{s_requestRecharge.result}}</view>
+        <button class="dt-btn {{s_requestRecharge.status==='ok'?'dt-btn--ok':''}}"
+          loading="{{s_requestRecharge.status==='running'}}"
+          disabled="{{s_requestRecharge.status==='running'}}"
+          catchtap="runRequestRecharge">
+          {{s_requestRecharge.status==='ok' ? '✓ 已完成' : '执行'}}
+        </button>
+      </view>
+    </view>
+
+    <view class="dt-divider"/>
+
+    <view class="dt-step">
+      <view class="dt-step-meta">
+        <view class="dt-step-num">⑩</view>
+        <view class="dt-step-info">
+          <text class="dt-step-name">管理员审核通过</text>
+          <text class="dt-step-desc">批准步骤⑨的充值申请，余额增加 10 总裁贝</text>
+        </view>
+      </view>
+      <view class="dt-step-foot">
+        <view class="dt-result {{s_approveRecharge.status}}" wx:if="{{s_approveRecharge.result}}">{{s_approveRecharge.result}}</view>
+        <button class="dt-btn {{s_approveRecharge.status==='ok'?'dt-btn--ok':''}}"
+          loading="{{s_approveRecharge.status==='running'}}"
+          disabled="{{s_approveRecharge.status==='running' || !rechargeId}}"
+          catchtap="runApproveRecharge">
+          {{s_approveRecharge.status==='ok' ? '✓ 已完成' : (rechargeId ? '执行' : '先完成步骤⑨')}}
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- ══ 清理本次测试 ══ -->
+  <view class="dt-section">
+    <text class="dt-section-title">清理本次测试数据</text>
+    <text class="dt-section-sub" style="margin-bottom:16rpx">
+      仅删除本次测试创建的记录（订单软删除 / 提现&充值物理删除），不影响其他数据
+    </text>
+    <view class="dt-cleanup-ids" wx:if="{{testOrderId || withdrawId || rechargeId}}">
+      <view wx:if="{{testOrderId}}"  class="dt-id-chip">订单 …{{testOrderId.slice(-6)}}</view>
+      <view wx:if="{{withdrawId}}"   class="dt-id-chip">提现 …{{withdrawId.slice(-6)}}</view>
+      <view wx:if="{{rechargeId}}"   class="dt-id-chip">充值 …{{rechargeId.slice(-6)}}</view>
+    </view>
+    <view wx:else class="dt-no-data">本次测试暂无可清理的数据</view>
+    <button class="dt-btn dt-btn--danger"
+      loading="{{clearing}}" disabled="{{clearing || (!testOrderId && !withdrawId && !rechargeId)}}"
+      catchtap="runCleanup">
+      {{clearing ? '清理中…' : '清理本次测试数据'}}
+    </button>
+  </view>
+
+
+  <!-- ══ 清零所有流水 ══ -->
+  <view class="dt-section">
+    <text class="dt-section-title">清零所有流水数据</text>
+    <text class="dt-section-sub" style="margin-bottom:16rpx">
+      删除全部充值/提现记录，并将所有用户 balance_fen 归零（不删订单）
+    </text>
+    <view class="dt-step-foot">
+      <view class="dt-result {{s_clearWallet.status}}" wx:if="{{s_clearWallet.result}}">{{s_clearWallet.result}}</view>
+      <button class="dt-btn dt-btn--danger {{s_clearWallet.status==='ok'?'dt-btn--ok':''}}"
+        loading="{{s_clearWallet.status==='running'}}"
+        disabled="{{s_clearWallet.status==='running'}}"
+        catchtap="runClearWallet">
+        {{s_clearWallet.status==='ok' ? '✓ 已清零' : '清零流水'}}
+      </button>
+    </view>
+  </view>
+
+  <!-- ══ 运行日志 ══ -->
+  <view class="dt-log-section">
+    <view class="dt-log-header">
+      <text class="dt-log-title">运行日志</text>
+      <view class="dt-log-clear-btn" catchtap="clearLog">清空</view>
+    </view>
+    <view wx:if="{{!logs.length}}" class="dt-log-empty">暂无日志 — 执行任意步骤后显示</view>
+    <view wx:else class="dt-log-list">
+      <view wx:for="{{logs}}" wx:key="id" class="dt-log-item dt-log-{{item.type}}">
+        <text class="dt-log-time">{{item.time}}</text>
+        <text class="dt-log-msg">{{item.msg}}</text>
+      </view>
+    </view>
+  </view>
+
+</scroll-view>

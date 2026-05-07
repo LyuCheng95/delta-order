@@ -1,0 +1,34 @@
+<view class="page">
+  <scroll-view scroll-x class="tabs">
+    <view class="tab-row">
+      <view wx:for="{{tabs}}" wx:key="v" class="tab {{activeTab===item.v?'active':''}}" bindtap="switchTab" data-v="{{item.v}}">{{item.l}}</view>
+    </view>
+  </scroll-view>
+  <scroll-view scroll-y class="list-scroll" refresher-enabled refresher-triggered="{{refreshing}}" bindrefresherrefresh="onRefresh">
+    <view class="list">
+      <block wx:if="{{loading}}">
+        <view wx:for="{{[1,2,3,4]}}" wx:key="*this" class="skeleton-card"/>
+      </block>
+      <block wx:elif="{{orders.length}}">
+        <view wx:for="{{orders}}" wx:key="_id" class="card order-card" bindtap="goDetail" data-id="{{item._id}}">
+          <view class="row-between">
+            <text class="bold flex1" style="line-height:1.4">{{item.service_snapshot.service_name}}</text>
+            <text class="badge badge-{{item.status}}">{{item.statusLabel}}</text>
+          </view>
+          <text class="t3 xs" style="margin:8rpx 0 16rpx">{{item.order_no}}</text>
+          <view class="divider"/>
+          <view class="row-between" style="margin-top:4rpx">
+            <text class="t3 xs">{{item.timeStr}}</text>
+            <view class="row" style="align-items:baseline;gap:2rpx">
+              <text class="t3 xs">¥</text>
+              <text class="tg bold" style="font-size:36rpx">{{item.totalYuan}}</text>
+            </view>
+          </view>
+        </view>
+      </block>
+      <block wx:else>
+        <view class="empty"><text class="empty-icon">📋</text><text>暂无订单</text></view>
+      </block>
+    </view>
+  </scroll-view>
+</view>

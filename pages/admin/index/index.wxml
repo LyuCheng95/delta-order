@@ -1,0 +1,264 @@
+<view class="admin-page">
+  <scroll-view scroll-x class="admin-nav-scroll" enhanced show-scrollbar="{{false}}">
+    <view class="admin-nav-inner">
+      <view
+        wx:for="{{adminNav}}"
+        wx:key="k"
+        class="admin-nav-chip {{adminTab===item.k?'active':''}}"
+        bindtap="onAdminNav"
+        data-k="{{item.k}}"
+      >{{item.l}}</view>
+    </view>
+  </scroll-view>
+
+  <!-- —— 订单 —— -->
+  <view wx:if="{{adminTab==='orders'}}" class="admin-flex-col">
+    <scroll-view scroll-x class="tabs sub-tabs" enhanced show-scrollbar="{{false}}">
+      <view class="tab-row">
+        <view
+          wx:for="{{orderTabs}}"
+          wx:key="v"
+          class="tab {{orderFilter===item.v?'active':''}}"
+          bindtap="switchOrderFilter"
+          data-v="{{item.v}}"
+        >{{item.l}}</view>
+      </view>
+    </scroll-view>
+    <scroll-view scroll-y class="admin-list-scroll">
+      <view class="list">
+        <view wx:if="{{ordersLoading}}" class="t3 sm" style="padding:40rpx">加载中…</view>
+        <block wx:elif="{{orders.length}}">
+          <view wx:for="{{orders}}" wx:key="_id" class="card order-card">
+            <view bindtap="goOrderDetail" data-id="{{item._id}}">
+              <view class="row-between">
+                <text class="bold flex1">{{item.service_snapshot.service_name}}</text>
+                <view class="row" style="align-items:center;gap:12rpx">
+                  <text class="badge badge-{{item.status}}">{{item.statusLabel}}</text>
+                  <view class="dot-menu-wrap" catchtap="toggleMenu" data-id="{{item._id}}">
+                    <text class="dot-menu-icon">⋮</text>
+                    <view wx:if="{{menuOpenId===item._id}}" class="dot-dropdown">
+                      <view wx:if="{{item.canRefund}}" class="dot-item" catchtap="onAdminRefund" data-id="{{item._id}}">退款</view>
+                      <view class="dot-item dot-item-danger" catchtap="onAdminDeleteOrder" data-id="{{item._id}}">删除</view>
+                    </view>
+                  </view>
+                </view>
+              </view>
+              <text class="t3 xs" style="margin:8rpx 0">{{item.order_no}}</text>
+              <view class="divider"/>
+              <view class="row-between" style="margin-top:8rpx;align-items:flex-start">
+                <view>
+                  <text class="t2 sm">老板：{{item.bossName || '—'}}</text>
+                  <text wx:if="{{item.bossContact}}" class="t3 xs" style="display:block;margin-top:4rpx">📞 {{item.bossContact}}</text>
+                  <text class="t3 xs" style="display:block;margin-top:4rpx">{{item.timeStr}}</text>
+                </view>
+                <text class="tg bold" style="font-size:32rpx;flex-shrink:0">{{item.totalZb}} 总裁贝</text>
+              </view>
+            </view>
+          </view>
+        </block>
+        <view wx:else class="empty"><text class="empty-icon">📋</text><text>暂无订单</text></view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- —— 提现 —— -->
+  <view wx:elif="{{adminTab==='withdrawals'}}" class="admin-flex-col">
+    <view class="wallet-tab-bar">
+      <view class="wallet-tab-item {{wTab===0?'wallet-tab-active':''}}" bindtap="onWalletTab" data-idx="0">
+        待打款
+        <text wx:if="{{wPending.length && wTab!==0}}" class="wallet-badge">{{wPending.length}}</text>
+      </view>
+      <view class="wallet-tab-item {{wTab===1?'wallet-tab-active':''}}" bindtap="onWalletTab" data-idx="1">全部流水</view>
+    </view>
+
+    <!-- 待打款 tab：全选栏 -->
+    <view wx:if="{{wTab===0 && !wLoading && wGroups.length}}" class="w-select-bar" catchtap="wToggleSelectAll">
+      <view class="row" style="display:flex;align-items:center;gap:16rpx">
+        <view class="w-check {{wSelectAll?'w-check-on':''}}">
+          <text wx:if="{{wSelectAll}}" class="w-check-tick">✓</text>
+        </view>
+        <text class="t2 sm">全选</text>
+      </view>
+      <text class="t3 sm">已选 {{wSelected.length}} / {{wPending.length}} 笔</text>
+    </view>
+
+    <scroll-view scroll-y class="admin-list-scroll">
+      <view class="list" style="padding-bottom:{{wTab===0&&wSelected.length?'160rpx':'32rpx'}}">
+        <view wx:if="{{wLoading}}" class="t3 sm" style="padding:32rpx">加载中…</view>
+        <block wx:elif="{{wTab===0}}">
+          <view wx:if="{{!wGroups.length}}" class="empty"><text class="empty-icon">✓</text><text>暂无待处理</text></view>
+          <view wx:else class="stack">
+            <view
+              wx:for="{{wGroups}}" wx:key="openid"
+              class="card item {{item.allSelected?'w-card-selected':item.partialSelected?'w-card-partial':''}}"
+              catchtap="toggleWGroup" data-openid="{{item.openid}}"
+            >
+              <view class="row-between">
+                <view class="row" style="display:flex;align-items:center;gap:16rpx;flex:1;min-width:0">
+                  <view class="w-check {{item.allSelected?'w-check-on':item.partialSelected?'w-check-partial':''}}">
+                    <text wx:if="{{item.allSelected}}" class="w-check-tick">✓</text>
+                    <text wx:elif="{{item.partialSelected}}" class="w-check-tick">−</text>
+                  </view>
+                  <text class="bold flex1">{{item.nickname}}</text>
+                </view>
+                <text class="tg bold" style="font-size:40rpx;flex-shrink:0">¥{{item.totalYuan}}</text>
+              </view>
+              <view class="wechat-row" style="margin-top:10rpx;padding-left:56rpx">
+                <text class="t2 sm">银行卡：</text>
+                <text class="bold tc">{{item.bankCardDisplay}}</text>
+              </view>
+              <!-- 每笔提现明细 -->
+              <view wx:for="{{item.items}}" wx:for-item="w" wx:key="_id"
+                style="display:flex;justify-content:space-between;padding:10rpx 0 0 56rpx">
+                <text class="t3 xs">{{w.timeStr}}</text>
+                <text class="t2 sm bold">¥{{w.amountYuan}}</text>
+              </view>
+            </view>
+          </view>
+        </block>
+        <block wx:else>
+          <view wx:if="{{!wAll.length}}" class="empty"><text class="empty-icon">📭</text><text>暂无记录</text></view>
+          <view wx:else class="stack">
+            <view wx:for="{{wAll}}" wx:key="_id" class="card item">
+              <view class="row-between" style="margin-bottom:8rpx">
+                <text class="bold">{{item.hunter_nickname || '打手'}}</text>
+                <text class="tg bold" style="font-size:36rpx">¥{{item.amountYuan}}</text>
+              </view>
+              <view class="row-between">
+                <text class="t3 xs">{{item.timeStr}}</text>
+                <text class="badge {{item.statusCls}}">{{item.statusLabel}}</text>
+              </view>
+              <view wx:if="{{item.bank_card}}" class="wechat-row" style="margin-top:8rpx">
+                <text class="t2 sm">银行卡：</text>
+                <text class="t2 sm bold">{{item.bank_card}}</text>
+              </view>
+              <text wx:if="{{item.reject_reason}}" class="t2 sm tr" style="display:block;margin-top:8rpx">拒绝原因：{{item.reject_reason}}</text>
+            </view>
+          </view>
+        </block>
+      </view>
+    </scroll-view>
+
+    <!-- 批量操作悬浮栏 -->
+    <view wx:if="{{wTab===0 && wSelected.length}}" class="w-batch-bar">
+      <view style="flex:1;min-width:0">
+        <text class="t2 sm" style="display:block">已选 {{wSelected.length}} 笔</text>
+        <text class="tg bold" style="font-size:36rpx">¥{{wSelectedTotal}}</text>
+      </view>
+      <view class="row" style="display:flex;gap:16rpx;flex-shrink:0">
+        <button class="btn btn-ghost btn-sm" catchtap="wBatchReject">拒绝</button>
+        <button class="btn btn-primary btn-sm" loading="{{wBatchLoading}}" disabled="{{wBatchLoading}}" catchtap="wBatchPay">标记已打款</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- —— 充值记录 —— -->
+  <view wx:elif="{{adminTab==='recharges'}}" class="admin-flex-col">
+    <scroll-view scroll-y class="admin-list-scroll">
+      <view class="list">
+        <view wx:if="{{rLoading}}" class="t3 sm" style="padding:40rpx">加载中…</view>
+        <view wx:elif="{{!rList.length}}" class="empty"><text class="empty-icon">💎</text><text>暂无充值记录</text></view>
+        <block wx:else>
+          <view wx:for="{{rList}}" wx:key="_id" class="card item">
+            <view class="row-between" style="margin-bottom:8rpx">
+              <text class="bold">{{item.boss_nickname || '老板'}}</text>
+              <text class="badge {{item.statusCls}}">{{item.statusLabel}}</text>
+            </view>
+            <view class="row-between" style="margin-bottom:8rpx">
+              <text class="t2 sm">充值金额</text>
+              <text class="tg bold" style="font-size:36rpx">{{item.amountZb}} 总裁贝</text>
+            </view>
+            <text class="t3 xs" style="display:block">{{item.timeStr}}</text>
+          </view>
+        </block>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 服务管理已跳转至独立页面 pages/admin/services/index -->
+
+  <!-- —— 设置 —— -->
+  <view wx:elif="{{adminTab==='settings'}}" class="admin-flex-col">
+    <scroll-view scroll-y class="admin-list-scroll">
+      <view style="padding:24rpx">
+        <view class="card" style="margin-bottom:24rpx">
+          <text class="bold sm" style="display:block;margin-bottom:16rpx">客服微信二维码</text>
+          <text class="t2 xs" style="display:block;margin-bottom:24rpx;color:var(--text-3)">老板端首页展示此二维码，扫码即可添加客服微信。</text>
+          <view wx:if="{{csQrUrl}}" bindtap="previewCsQr" style="margin-bottom:24rpx;display:flex;justify-content:center">
+            <image src="{{csQrUrl}}" mode="aspectFit" style="width:300rpx;height:300rpx;border-radius:16rpx;border:1rpx solid var(--border)"/>
+          </view>
+          <view wx:else style="margin-bottom:24rpx;display:flex;justify-content:center;align-items:center;height:200rpx;border:2rpx dashed var(--border);border-radius:16rpx">
+            <text class="t3 sm">尚未设置二维码</text>
+          </view>
+          <button class="btn btn-primary" style="width:100%" loading="{{csQrUploading}}" disabled="{{csQrUploading}}" bindtap="onUploadCsQr">
+            {{csQrUrl ? '更换二维码' : '上传二维码'}}
+          </button>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- —— 打手 —— -->
+  <view wx:elif="{{adminTab==='hunters'}}" class="admin-flex-col">
+    <scroll-view scroll-x class="tabs sub-tabs" enhanced show-scrollbar="{{false}}">
+      <view class="tab-row">
+        <view class="tab {{hMain==='apply'?'active':''}}" bindtap="switchHMain" data-v="apply">申请审核</view>
+        <view class="tab {{hMain==='manage'?'active':''}}" bindtap="switchHMain" data-v="manage">在职打手</view>
+      </view>
+    </scroll-view>
+
+    <block wx:if="{{hMain==='apply'}}">
+      <scroll-view scroll-x class="tabs sub-tabs" enhanced show-scrollbar="{{false}}">
+        <view class="tab-row">
+          <view
+            wx:for="{{hApplyTabs}}"
+            wx:key="v"
+            class="tab {{hApplyTab===item.v?'active':''}}"
+            bindtap="switchHApply"
+            data-v="{{item.v}}"
+          >{{item.l}}</view>
+        </view>
+      </scroll-view>
+      <scroll-view scroll-y class="admin-list-scroll" refresher-enabled refresher-triggered="{{hRefreshing}}" bindrefresherrefresh="onHRefresh">
+        <view class="list">
+          <view wx:if="{{!hunters.length&&!hLoading}}" class="empty"><text class="empty-icon">🎮</text><text>暂无数据</text></view>
+          <view wx:for="{{hunters}}" wx:key="_id" class="card hunter-card">
+            <view class="row-between" style="margin-bottom:12rpx">
+              <view class="row" style="display:flex;align-items:center;gap:16rpx">
+                <image style="width:64rpx;height:64rpx;border-radius:50%" src="{{item.avatar_url}}"/>
+                <text class="bold">{{item.nickname}}</text>
+              </view>
+              <text class="badge badge-{{item.hunter_info.apply_status==='pending'?'paid':item.hunter_info.apply_status==='approved'?'completed':'cancelled'}}">{{item.statusLabel}}</text>
+            </view>
+            <text class="t2 sm" style="display:block;margin-bottom:16rpx;line-height:1.5">{{item.hunter_info.apply_reason}}</text>
+            <view wx:if="{{item.hunter_info.apply_status==='pending'}}" class="row" style="display:flex;gap:12rpx">
+              <button class="btn btn-primary btn-sm flex1" catchtap="onHApprove" data-id="{{item._id}}">通过</button>
+              <button class="btn btn-danger btn-sm flex1" catchtap="onHReject" data-id="{{item._id}}">拒绝</button>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+    </block>
+
+    <scroll-view wx:else scroll-y class="admin-list-scroll" refresher-enabled refresher-triggered="{{hRefreshing}}" bindrefresherrefresh="onHRefreshManage">
+      <view class="list">
+        <view wx:if="{{!activeHunters.length&&!hLoading}}" class="empty"><text class="empty-icon">👤</text><text>暂无在职打手</text></view>
+        <view wx:for="{{activeHunters}}" wx:key="_id" class="card hunter-card">
+          <view class="row-between" style="margin-bottom:12rpx">
+            <view class="row" style="display:flex;align-items:center;gap:16rpx">
+              <image style="width:64rpx;height:64rpx;border-radius:50%" src="{{item.avatar_url}}"/>
+              <text class="bold">{{item.nickname}}</text>
+            </view>
+            <text class="badge badge-completed">在职</text>
+          </view>
+          <text class="t2 sm" style="display:block;margin-bottom:8rpx">已完成 <text class="tc bold">{{item.completed_count}}</text> 单 · 累计到账 <text class="tg bold">¥{{item.earnedYuan}}</text></text>
+          <text class="t3 sm" style="display:block;margin-bottom:16rpx">当前分成：<text class="bold tc">{{item.share_percent}}%</text></text>
+          <view class="row" style="display:flex;gap:12rpx">
+            <button class="btn btn-ghost btn-sm flex1" catchtap="onHEditShare" data-id="{{item._id}}" data-share="{{item.share_percent}}">调整分成</button>
+            <button class="btn btn-danger btn-sm flex1" catchtap="onHDismiss" data-id="{{item._id}}" data-name="{{item.nickname}}">解雇</button>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+</view>

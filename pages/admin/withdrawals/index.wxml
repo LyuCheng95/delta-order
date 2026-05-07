@@ -1,0 +1,31 @@
+<view class="page">
+  <scroll-view scroll-y class="list-scroll"
+    refresher-enabled refresher-triggered="{{refreshing}}"
+    bindrefresherrefresh="onRefresh">
+    <view class="stack">
+      <view wx:if="{{loading}}" class="t3 sm" style="padding:40rpx;text-align:center">加载中…</view>
+      <view wx:elif="{{!pending.length}}" class="empty">
+        <text class="empty-icon">✅</text>
+        <text>暂无待处理提现</text>
+      </view>
+      <block wx:else>
+        <view wx:for="{{pending}}" wx:key="_id" class="card item">
+          <view class="row-between" style="margin-bottom:12rpx">
+            <text class="bold">{{item.hunter_nickname || '打手'}}</text>
+            <text class="tg bold" style="font-size:40rpx">¥{{item.amountYuan}}</text>
+          </view>
+          <text class="t3 xs" style="display:block;margin-bottom:12rpx">{{item.timeStr}}</text>
+          <view class="wechat-row" style="margin-bottom:16rpx">
+            <text class="t2 sm">打款微信：</text>
+            <text class="bold tc flex1">{{item.wechat_id}}</text>
+            <text class="t3 sm" style="color:var(--primary)" catchtap="onCopy" data-v="{{item.wechat_id}}">复制</text>
+          </view>
+          <view class="row" style="gap:12rpx">
+            <button class="btn btn-ghost btn-sm flex1" catchtap="onReject" data-id="{{item._id}}">拒绝</button>
+            <button class="btn btn-primary btn-sm flex1" catchtap="onPaid" data-id="{{item._id}}">已打款</button>
+          </view>
+        </view>
+      </block>
+    </view>
+  </scroll-view>
+</view>

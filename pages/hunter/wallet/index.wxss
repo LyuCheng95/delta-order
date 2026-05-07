@@ -1,0 +1,16 @@
+.page { background: var(--bg-base); height: 100%; display: flex; flex-direction: column; }
+.scroll { flex: 1; min-height: 0; }
+.content { padding: 32rpx; padding-bottom: calc(48rpx + env(safe-area-inset-bottom)); }
+.summary-card { text-align: center; padding: 48rpx 32rpx; margin-bottom: 24rpx; }
+.balance { font-size: 80rpx; font-weight: 700; color: var(--primary); display: block; margin: 12rpx 0; }
+.stats-row { display: flex; align-items: center; margin-top: 24rpx; }
+.stat-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8rpx; }
+.stat-val { font-size: 32rpx; font-weight: 700; color: var(--text-1); }
+.stat-div { width: 1rpx; height: 48rpx; background: var(--border); }
+.form-section { margin-bottom: 32rpx; }
+.field { margin-bottom: 24rpx; }
+.label { display: block; font-size: 26rpx; color: var(--text-2); margin-bottom: 12rpx; }
+.input-row { display: flex; align-items: center; gap: 16rpx; }
+.record-card { padding: 24rpx 32rpx; display: flex; align-items: center; justify-content: space-between; }
+.record-amount { font-size: 32rpx; font-weight: 700; }
+.record-amount.positive { color: var(--green); }

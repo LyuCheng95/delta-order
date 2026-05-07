@@ -1,0 +1,7 @@
+.page { background: var(--bg-base); height: 100%; display: flex; flex-direction: column; }
+.list-scroll { flex: 1; min-height: 0; }
+.stack { padding: 32rpx; display: flex; flex-direction: column; gap: 16rpx; }
+.item { padding: 28rpx 32rpx; }
+.wechat-row { display: flex; align-items: center; gap: 12rpx; background: var(--bg-elevated); border-radius: 12rpx; padding: 16rpx 20rpx; }
+.btn::after { border: none; }
+.btn-sm::after { border: none; }

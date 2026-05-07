@@ -1,0 +1,60 @@
+<view class="page">
+  <scroll-view scroll-x class="tabs main-tabs"><view class="tab-row">
+    <view class="tab {{mainTab==='apply'?'active':''}}" bindtap="switchMain" data-v="apply">申请审核</view>
+    <view class="tab {{mainTab==='manage'?'active':''}}" bindtap="switchMain" data-v="manage">在职陪玩师</view>
+  </view></scroll-view>
+
+  <block wx:if="{{mainTab==='apply'}}">
+    <scroll-view scroll-x class="tabs"><view class="tab-row">
+      <view wx:for="{{tabs}}" wx:key="v" class="tab {{activeTab===item.v?'active':''}}" bindtap="switchTab" data-v="{{item.v}}">{{item.l}}</view>
+    </view></scroll-view>
+    <scroll-view scroll-y class="list-scroll" refresher-enabled refresher-triggered="{{refreshing}}" bindrefresherrefresh="onRefresh">
+      <view class="list">
+        <view wx:if="{{!hunters.length&&!loading}}" class="empty"><text class="empty-icon">🎮</text><text>暂无数据</text></view>
+        <view wx:for="{{hunters}}" wx:key="_id" class="card hunter-card">
+          <view class="row-between" style="margin-bottom:12rpx">
+            <view class="row" style="gap:16rpx"><image style="width:64rpx;height:64rpx;border-radius:50%" src="{{item.avatar_url}}"/><text class="bold">{{item.nickname}}</text></view>
+            <text class="badge badge-{{item.hunter_info.apply_status==='pending'?'paid':item.hunter_info.apply_status==='approved'?'completed':'cancelled'}}">{{item.statusLabel}}</text>
+          </view>
+          <text class="t2 sm" style="display:block;margin-bottom:8rpx;line-height:1.5">{{item.hunter_info.apply_reason}}</text>
+          <view wx:if="{{item.contact}}" class="wechat-row" style="margin-bottom:16rpx" catchtap="onCopyContact" data-contact="{{item.contact}}">
+            <view class="wx-icon"><text class="wx-icon-text">微</text></view>
+            <text class="t2 sm" style="flex:1;min-width:0">{{item.contact}}</text>
+            <text class="t3 sm" style="color:var(--primary)">复制</text>
+          </view>
+          <view wx:else style="margin-bottom:16rpx"></view>
+          <view wx:if="{{item.hunter_info.apply_status==='pending'}}" class="row" style="gap:12rpx">
+            <button class="btn btn-primary btn-sm flex1" catchtap="onApprove" data-id="{{item._id}}">通过</button>
+            <button class="btn btn-danger btn-sm flex1" catchtap="onReject" data-id="{{item._id}}">拒绝</button>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+  </block>
+
+  <block wx:else>
+    <scroll-view scroll-y class="list-scroll" refresher-enabled refresher-triggered="{{refreshing}}" bindrefresherrefresh="onRefreshManage">
+      <view class="list">
+        <view wx:if="{{!activeList.length&&!loading}}" class="empty"><text class="empty-icon">👤</text><text>暂无在职陪玩师</text></view>
+        <view wx:for="{{activeList}}" wx:key="_id" class="card hunter-card">
+          <view class="row-between" style="margin-bottom:12rpx">
+            <view class="row" style="gap:16rpx"><image style="width:64rpx;height:64rpx;border-radius:50%" src="{{item.avatar_url}}"/><text class="bold">{{item.nickname}}</text></view>
+            <text class="badge badge-completed">在职</text>
+          </view>
+          <text class="t2 sm" style="display:block;margin-bottom:8rpx">已完成 <text class="tc bold">{{item.completed_count}}</text> 单 · 累计到账 <text class="tg bold">¥{{item.earnedYuan}}</text></text>
+          <text class="t3 sm" style="display:block;margin-bottom:8rpx">当前分成：<text class="bold tc">{{item.share_percent}}%</text>（管理员确认结单时按此比例结算）</text>
+          <view wx:if="{{item.contact}}" class="wechat-row" style="margin-bottom:16rpx" catchtap="onCopyContact" data-contact="{{item.contact}}">
+            <view class="wx-icon"><text class="wx-icon-text">微</text></view>
+            <text class="t2 sm" style="flex:1;min-width:0">{{item.contact}}</text>
+            <text class="t3 sm" style="color:var(--primary)">复制</text>
+          </view>
+          <text wx:else class="t3 sm" style="display:block;margin-bottom:16rpx;color:var(--text-3)">未填写联系方式</text>
+          <view class="row" style="gap:12rpx">
+            <button class="btn btn-ghost btn-sm flex1" catchtap="onEditShare" data-id="{{item._id}}" data-share="{{item.share_percent}}">调整分成</button>
+            <button class="btn btn-danger btn-sm flex1" catchtap="onDismiss" data-id="{{item._id}}" data-name="{{item.nickname}}">解雇</button>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+  </block>
+</view>
