@@ -32,38 +32,44 @@ Page({
   async _load() {
     this.setData({ loading: true })
     try {
-      const [cats, ordersRes, cfgRes] = await Promise.all([
-        service.listCats(),
+      const results = await Promise.all([
+        service.listAllForBoss(),
         order.list({ type: 'boss', status: 'in_progress' }),
         config.get('cs_qr').catch(() => null)
       ])
+      const svcData   = results[0] || {}
+      const ordersRes = results[1]
+      const cfgRes    = results[2]
 
-      const catList = cats || []
-      const svcRequests = catList.map(c => service.listByCat(c._id))
-      const svcResults  = await Promise.all(svcRequests)
+      const catList = svcData.cats || []
+      const svcList = svcData.svcs || []
 
-      const groups = catList.map((cat, i) => ({
-        catId:    cat._id,
-        catName:  cat.name,
-        icon:     cat.icon,
-        services: (svcResults[i] || []).map(s => ({
-          ...s,
-          priceYuan: fen2yuan(s.price)
-        }))
-      })).filter(g => g.services.length > 0)
+      const svcByCat = {}
+      svcList.forEach(function(s) { (svcByCat[s.category_id] = svcByCat[s.category_id] || []).push(s) })
 
-      const active = (ordersRes.list || []).slice(0, 5).map(o => ({
-        ...o, totalYuan: fen2yuan(o.total_amount), timeStr: fmtTime(o.created_at)
-      }))
+      const groups = catList.map(function(cat) {
+        return {
+          catId:    cat._id,
+          catName:  cat.name,
+          icon:     cat.icon,
+          services: (svcByCat[cat._id] || []).map(function(s) {
+            return Object.assign({}, s, { priceYuan: fen2yuan(s.price) })
+          })
+        }
+      }).filter(function(g) { return g.services.length > 0 })
+
+      const active = ((ordersRes && ordersRes.list) || []).slice(0, 5).map(function(o) {
+        return Object.assign({}, o, { totalYuan: fen2yuan(o.total_amount), timeStr: fmtTime(o.created_at) })
+      })
 
       let csQrUrl = (cfgRes && cfgRes.value) || ''
       if (csQrUrl && csQrUrl.startsWith('cloud://')) {
         try {
-          const { fileList } = await wx.cloud.getTempFileURL({ fileList: [csQrUrl] })
-          csQrUrl = fileList[0]?.tempFileURL || csQrUrl
+          const tmpRes = await wx.cloud.getTempFileURL({ fileList: [csQrUrl] })
+          csQrUrl = (tmpRes.fileList[0] && tmpRes.fileList[0].tempFileURL) || csQrUrl
         } catch (_) {}
       }
-      this.setData({ groups, activeOrders: active, activeCatIndex: -1, scrollInto: '', csQrUrl })
+      this.setData({ groups: groups, activeOrders: active, activeCatIndex: -1, scrollInto: '', csQrUrl: csQrUrl })
     } finally {
       this.setData({ loading: false })
     }
