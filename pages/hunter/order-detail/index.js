@@ -1,5 +1,5 @@
 const { order, auth } = require('../../../utils/cloud')
-const { fen2yuan, fmtTime, STATUS_LABEL, ROUTES } = require('../../../utils/constants')
+const { fen2zb, fmtTime, STATUS_LABEL, ROUTES } = require('../../../utils/constants')
 const { buildFormRows } = require('../../../utils/orderFormDisplay')
 const { compressImageForUpload } = require('../../../utils/imageCompress')
 const app = getApp()
@@ -35,10 +35,10 @@ Page({
       order: {
         ...o,
         statusLabel: STATUS_LABEL[o.status] || o.status,
-        totalYuan: fen2yuan(o.total_amount),
+        totalYuan: fen2zb(o.total_amount),
         proofUrls: proofIds,
         formRows,
-        earnYuan: o.hunter_earn_fen != null && o.hunter_earn_fen >= 0 ? fen2yuan(o.hunter_earn_fen) : '',
+        earnYuan: o.hunter_earn_fen != null && o.hunter_earn_fen >= 0 ? fen2zb(o.hunter_earn_fen) : '',
         isMyOrder: String(o.hunter_openid || '').trim() === myOpenid,
         needsCoHunter: !!o.needs_co_hunter,
         hasCoHunter: !!String(o.preferred_co_hunter_openid || '').trim()

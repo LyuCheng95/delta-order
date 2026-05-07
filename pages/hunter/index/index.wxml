@@ -42,7 +42,7 @@
               <text class="bold flex1" style="line-height:1.4">{{item.service_snapshot.service_name}}</text>
               <view wx:if="{{item.isDesignated}}" class="designated-badge">🎯 指定单</view>
             </view>
-            <text class="tg bold" style="font-size:38rpx;white-space:nowrap;margin-left:16rpx">¥{{item.totalYuan}}</text>
+            <text class="tg bold" style="font-size:38rpx;white-space:nowrap;margin-left:16rpx">{{item.totalYuan}}</text>
           </view>
           <text class="t2 sm" style="display:block;margin-bottom:8rpx">{{item.service_snapshot.category_name}}</text>
           <text wx:if="{{item.bossBrief}}" class="t2 sm" style="display:block;margin-bottom:8rpx;line-height:1.5;color:rgba(0,229,255,.85)">{{item.bossBrief}}</text>
@@ -82,7 +82,7 @@
           <view wx:for="{{myOrders}}" wx:key="_id" class="card order-card" bindtap="goDetail" data-id="{{item._id}}">
             <view class="row-between" style="margin-bottom:12rpx">
               <text class="bold flex1" style="line-height:1.4">{{item.service_snapshot.service_name}}</text>
-              <text class="tg bold" style="font-size:38rpx">¥{{item.totalYuan}}</text>
+              <text class="tg bold" style="font-size:38rpx">{{item.totalYuan}}</text>
             </view>
             <view class="row-between">
               <text class="t2 sm">{{item.timeStr}}</text>
@@ -113,17 +113,17 @@
         <text class="hero-amt">{{summary.availableYuan}}</text>
         <view class="stats-row">
           <view class="stat-item">
-            <text class="stat-val tg">¥{{summary.earnedYuan}}</text>
+            <text class="stat-val tg">{{summary.earnedYuan}}</text>
             <text class="t3 xs">累计完成</text>
           </view>
           <view class="stat-div"/>
           <view class="stat-item">
-            <text class="stat-val tc">¥{{summary.pendingYuan}}</text>
+            <text class="stat-val tc">{{summary.pendingYuan}}</text>
             <text class="t3 xs">提现中</text>
           </view>
           <view class="stat-div"/>
           <view class="stat-item">
-            <text class="stat-val t2">¥{{summary.paidOutYuan}}</text>
+            <text class="stat-val t2">{{summary.paidOutYuan}}</text>
             <text class="t3 xs">已打款</text>
           </view>
         </view>
@@ -157,7 +157,7 @@
       <view wx:else>
         <view wx:for="{{withdrawRecords}}" wx:key="_id" class="card rec-card">
           <view class="row-between">
-            <text class="bold">¥{{item.amountYuan}}</text>
+            <text class="bold">{{item.amountYuan}}</text>
             <text class="t2 sm">{{item.statusLabel}}</text>
           </view>
           <text class="t3 xs" style="display:block;margin-top:8rpx">{{item.timeStr}}</text>

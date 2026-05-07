@@ -19,7 +19,7 @@ function fmtWithdraw(r) {
   const s = W_STATUS_MAP[r.status] || { label: r.status, cls: '' }
   return {
     ...r,
-    amountYuan: fen2yuan(r.amount_fen),
+    amountYuan: fen2zb(r.amount_fen),
     timeStr: fmtTime(r.created_at),
     statusLabel: s.label,
     statusCls: s.cls,
@@ -278,7 +278,7 @@ Page({
       const selCount = g.items.filter(i => selectedMap && selectedMap[i._id]).length
       return {
         ...g,
-        totalYuan: (g.totalFen / 100).toFixed(2),
+        totalYuan: fen2zb(g.totalFen),
         allSelected: selCount === g.items.length && g.items.length > 0,
         partialSelected: selCount > 0 && selCount < g.items.length
       }
@@ -293,7 +293,7 @@ Page({
       const item = (this.data.wPending || []).find(w => w._id === id)
       if (item) totalFen += (item.amount_fen || 0)
     }
-    const yuan = (totalFen / 100).toFixed(2)
+    const yuan = fen2zb(totalFen)
     const all = this.data.wPending.length > 0 && selected.length === this.data.wPending.length
     const groups = this._buildGroups(this.data.wPending, map)
     this.setData({ wSelected: selected, wSelectedMap: map, wSelectAll: all, wSelectedTotal: yuan, wGroups: groups })
@@ -326,7 +326,7 @@ Page({
     if (!ids.length) { wx.showToast({ title: '请先勾选记录', icon: 'none' }); return }
     wx.showModal({
       title: '确认已打款',
-      content: `请确认已手动微信转账给 ${ids.length} 位陪玩师，共 ¥${this.data.wSelectedTotal}，标记后不可撤销。`,
+      content: `请确认已手动微信转账给 ${ids.length} 位陪玩师，共 ${this.data.wSelectedTotal} 总裁贝，标记后不可撤销。`,
       success: async r => {
         if (!r.confirm) return
         this.setData({ wBatchLoading: true })
@@ -566,7 +566,7 @@ Page({
       const d = await auth.listActiveHunters()
       const list = (d || []).map(u => ({
         ...u,
-        earnedYuan: fen2yuan(u.earned_fen || 0),
+        earnedYuan: fen2zb(u.earned_fen || 0),
         share_percent: u.share_percent != null ? u.share_percent : 70
       }))
       const kw = this.data.hKeyword.trim().toLowerCase()

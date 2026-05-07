@@ -56,7 +56,7 @@
         <view class="divider"/>
         <view class="info-row"><text class="t2 sm">分类</text><text>{{order.service_snapshot.category_name}}</text></view>
         <view class="divider"/>
-        <view class="info-row"><text class="t2 sm">金额</text><text class="tg bold" style="font-size:32rpx">¥{{order.totalYuan}}</text></view>
+        <view class="info-row"><text class="t2 sm">金额</text><text class="tg bold" style="font-size:32rpx">{{order.totalYuan}}</text></view>
         <block wx:if="{{order.hunter_display}}">
           <view class="divider"/>
           <view class="info-row">
@@ -68,7 +68,7 @@
           </view>
         </block>
         <view wx:if="{{order.earnYuan}}" class="divider"/>
-        <view wx:if="{{order.earnYuan}}" class="info-row"><text class="t2 sm">本单您的入账</text><text class="tg bold">¥{{order.earnYuan}}</text></view>
+        <view wx:if="{{order.earnYuan}}" class="info-row"><text class="t2 sm">本单您的入账</text><text class="tg bold">{{order.earnYuan}}</text></view>
       </view>
 
       <view class="card">
@@ -135,7 +135,7 @@
     <block wx:if="{{order.status==='in_progress'}}">
       <button class="btn btn-primary" style="width:100%;margin-bottom:12rpx"
         loading="{{taking}}" disabled="{{!selectedPartner}}" bindtap="confirmInvite">
-        {{selectedPartner ? '邀请「'+selectedPartner.nickname+'」为搭档' : '请先选择搭档'}}
+        {{selectedPartner ? '邀请「'+selectedPartner.nickname+'」为搭档' : '请先选择搭档'}} 总裁贝
       </button>
     </block>
     <!-- 操作按钮：接单模式 -->

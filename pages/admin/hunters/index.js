@@ -1,5 +1,5 @@
 const { auth } = require('../../../utils/cloud')
-const { fen2yuan } = require('../../../utils/constants')
+const { fen2zb } = require('../../../utils/constants')
 
 const LABEL = {
   none: '未申请',
@@ -69,7 +69,7 @@ Page({
       this.setData({
         activeList: (d || []).map(u => ({
           ...u,
-          earnedYuan: fen2yuan(u.earned_fen || 0),
+          earnedYuan: fen2zb(u.earned_fen || 0),
           share_percent: u.share_percent != null ? u.share_percent : 70,
           contact: u.contact || ''
         }))

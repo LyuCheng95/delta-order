@@ -1,5 +1,5 @@
 const { order } = require('../../../utils/cloud')
-const { fen2yuan, fmtTime, STATUS_LABEL, ROUTES } = require('../../../utils/constants')
+const { fen2zb, fmtTime, STATUS_LABEL, ROUTES } = require('../../../utils/constants')
 Page({
   data:{ tabs:[{l:'进行中',v:'in_progress'},{l:'待审核',v:'pending_settlement'},{l:'已完成',v:'completed'},{l:'全部',v:'all'}], activeTab:'in_progress', orders:[], loading:true, refreshing:false },
   onShow(){ this._load() },
@@ -11,7 +11,7 @@ Page({
         orders: (d.list || []).map(o => ({
           ...o,
           statusLabel: STATUS_LABEL[o.status] || o.status,
-          totalYuan: fen2yuan(o.total_amount),
+          totalYuan: fen2zb(o.total_amount),
           timeStr: fmtTime(o.status === 'completed' ? (o.completed_at || o.updated_at || o.created_at) : o.created_at)
         }))
       })

@@ -5,8 +5,8 @@
     <view class="amount-card">
       <text class="amount-label">应付金额</text>
       <view class="amount-row">
-        <text class="amount-unit">¥</text>
         <text class="amount-num">{{order.totalYuan}}</text>
+        <text class="amount-unit">总裁贝</text>
       </view>
       <view class="amount-no">订单号：{{order.order_no}}</view>
     </view>
@@ -24,7 +24,7 @@
 
   <!-- 底部操作 -->
   <view class="bottom-bar">
-    <button class="btn btn-primary" style="width:100%" loading="{{paying}}" bindtap="onWxPay">微信支付 ¥{{order.totalYuan}}</button>
+    <button class="btn btn-primary" style="width:100%" loading="{{paying}}" bindtap="onWxPay">微信支付 {{order.totalYuan}} 总裁贝</button>
     <button class="btn btn-ghost" style="width:100%;margin-top:12rpx" bindtap="onCancel">取消订单</button>
   </view>
 </view>

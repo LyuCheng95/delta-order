@@ -101,7 +101,7 @@
                   </view>
                   <text class="bold flex1">{{item.nickname}}</text>
                 </view>
-                <text class="tg bold" style="font-size:40rpx;flex-shrink:0">¥{{item.totalYuan}}</text>
+                <text class="tg bold" style="font-size:40rpx;flex-shrink:0">{{item.totalYuan}}</text>
               </view>
               <view class="wechat-row" style="margin-top:10rpx;padding-left:56rpx">
                 <text class="t2 sm">银行卡：</text>
@@ -111,7 +111,7 @@
               <view wx:for="{{item.items}}" wx:for-item="w" wx:key="_id"
                 style="display:flex;justify-content:space-between;padding:10rpx 0 0 56rpx">
                 <text class="t3 xs">{{w.timeStr}}</text>
-                <text class="t2 sm bold">¥{{w.amountYuan}}</text>
+                <text class="t2 sm bold">{{w.amountYuan}}</text>
               </view>
             </view>
           </view>
@@ -122,7 +122,7 @@
             <view wx:for="{{wAll}}" wx:key="_id" class="card item">
               <view class="row-between" style="margin-bottom:8rpx">
                 <text class="bold">{{item.hunter_nickname || '打手'}}</text>
-                <text class="tg bold" style="font-size:36rpx">¥{{item.amountYuan}}</text>
+                <text class="tg bold" style="font-size:36rpx">{{item.amountYuan}}</text>
               </view>
               <view class="row-between">
                 <text class="t3 xs">{{item.timeStr}}</text>
@@ -143,7 +143,7 @@
     <view wx:if="{{wTab===0 && wSelected.length}}" class="w-batch-bar">
       <view style="flex:1;min-width:0">
         <text class="t2 sm" style="display:block">已选 {{wSelected.length}} 笔</text>
-        <text class="tg bold" style="font-size:36rpx">¥{{wSelectedTotal}}</text>
+        <text class="tg bold" style="font-size:36rpx">{{wSelectedTotal}}</text>
       </view>
       <view class="row" style="display:flex;gap:16rpx;flex-shrink:0">
         <button class="btn btn-ghost btn-sm" catchtap="wBatchReject">拒绝</button>
@@ -191,7 +191,7 @@
             <text class="t3 sm">尚未设置二维码</text>
           </view>
           <button class="btn btn-primary" style="width:100%" loading="{{csQrUploading}}" disabled="{{csQrUploading}}" bindtap="onUploadCsQr">
-            {{csQrUrl ? '更换二维码' : '上传二维码'}}
+            {{csQrUrl ? '更换二维码' : '上传二维码'}} 总裁贝
           </button>
         </view>
       </view>
@@ -251,7 +251,7 @@
             </view>
             <text class="badge badge-completed">在职</text>
           </view>
-          <text class="t2 sm" style="display:block;margin-bottom:8rpx">已完成 <text class="tc bold">{{item.completed_count}}</text> 单 · 累计到账 <text class="tg bold">¥{{item.earnedYuan}}</text></text>
+          <text class="t2 sm" style="display:block;margin-bottom:8rpx">已完成 <text class="tc bold">{{item.completed_count}}</text> 单 · 累计到账 <text class="tg bold">{{item.earnedYuan}}</text></text>
           <text class="t3 sm" style="display:block;margin-bottom:16rpx">当前分成：<text class="bold tc">{{item.share_percent}}%</text></text>
           <view class="row" style="display:flex;gap:12rpx">
             <button class="btn btn-ghost btn-sm flex1" catchtap="onHEditShare" data-id="{{item._id}}" data-share="{{item.share_percent}}">调整分成</button>

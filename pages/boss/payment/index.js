@@ -1,5 +1,5 @@
 const { order: orderApi, payment } = require('../../../utils/cloud')
-const { fen2yuan, ROUTES, STORAGE_BOSS_ORDERS_TAB } = require('../../../utils/constants')
+const { fen2zb, ROUTES, STORAGE_BOSS_ORDERS_TAB } = require('../../../utils/constants')
 
 Page({
   data: { order: null, paying: false },
@@ -10,7 +10,7 @@ Page({
 
   async _load(oid) {
     const data = await orderApi.detail(oid)
-    if (data) this.setData({ order: { ...data, totalYuan: fen2yuan(data.total_amount) } })
+    if (data) this.setData({ order: { ...data, totalYuan: fen2zb(data.total_amount) } })
   },
 
   copyNo() {

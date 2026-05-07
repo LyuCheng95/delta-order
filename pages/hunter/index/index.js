@@ -1,5 +1,5 @@
 const { order, wallet, auth } = require('../../../utils/cloud')
-const { fen2yuan, fmtTime, STATUS_LABEL, ROUTES } = require('../../../utils/constants')
+const { fen2zb, fmtTime, STATUS_LABEL, ROUTES } = require('../../../utils/constants')
 const { formatBossBrief } = require('../../../utils/orderFormDisplay')
 const { hasRole } = require('../../../utils/roles')
 const app = getApp()
@@ -159,7 +159,7 @@ Page({
           const isDesignated = (ph && ph === myOpenid) || (pco && pco === myOpenid)
           return {
             ...o,
-            totalYuan: fen2yuan(o.total_amount),
+            totalYuan: fen2zb(o.total_amount),
             timeStr: fmtTime(o.created_at),
             bossBrief: formatBossBrief(o),
             isDesignated,
@@ -224,7 +224,7 @@ Page({
         myOrders: (d.list || []).map(o => ({
           ...o,
           statusLabel: STATUS_LABEL[o.status] || o.status,
-          totalYuan: fen2yuan(o.total_amount),
+          totalYuan: fen2zb(o.total_amount),
           timeStr: fmtTime(o.status === 'completed'
             ? (o.completed_at || o.updated_at || o.created_at)
             : o.created_at)
@@ -256,16 +256,16 @@ Page({
       const card = u.hunter_info && u.hunter_info.bank_card
       this.setData({
         summary: {
-          availableYuan: fen2yuan(sum.available_fen),
-          earnedYuan: fen2yuan(sum.earned_fen),
-          pendingYuan: fen2yuan(sum.pending_withdraw_fen),
-          paidOutYuan: fen2yuan(sum.paid_out_fen),
+          availableYuan: fen2zb(sum.available_fen),
+          earnedYuan: fen2zb(sum.earned_fen),
+          pendingYuan: fen2zb(sum.pending_withdraw_fen),
+          paidOutYuan: fen2zb(sum.paid_out_fen),
           sharePercent: sum.share_percent != null ? sum.share_percent : 70,
           bankCardDisplay: card ? ('**** **** **** ' + String(card).slice(-4)) : '未填写，请前往个人页面添加'
         },
         withdrawRecords: (list || []).map(r => ({
           ...r,
-          amountYuan: fen2yuan(r.amount_fen),
+          amountYuan: fen2zb(r.amount_fen),
           statusLabel:
             r.status === 'pending'  ? '待打款' :
             r.status === 'paid'     ? '✅ 已打款' : '❌ 已拒绝',

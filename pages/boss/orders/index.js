@@ -1,5 +1,5 @@
 const { order } = require('../../../utils/cloud')
-const { fen2yuan, fmtTime, STATUS_LABEL, ROUTES, STORAGE_BOSS_ORDERS_TAB } = require('../../../utils/constants')
+const { fen2zb, fmtTime, STATUS_LABEL, ROUTES, STORAGE_BOSS_ORDERS_TAB } = require('../../../utils/constants')
 
 Page({
   data: {
@@ -27,7 +27,7 @@ Page({
     this.setData({ loading:true })
     try {
       const data = await order.list({ type:'boss', status:this.data.activeTab })
-      const list = (data.list||[]).map(o => ({...o, statusLabel:STATUS_LABEL[o.status]||o.status, totalYuan:fen2yuan(o.total_amount), timeStr:fmtTime(o.created_at)}))
+      const list = (data.list||[]).map(o => ({...o, statusLabel:STATUS_LABEL[o.status]||o.status, totalYuan:fen2zb(o.total_amount), timeStr:fmtTime(o.created_at)}))
       this.setData({ orders:list })
     } finally {
       this.setData({ loading:false, refreshing:false })

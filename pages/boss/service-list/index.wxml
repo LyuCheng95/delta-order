@@ -31,8 +31,8 @@
           <text wx:if="{{svc.description}}" class="svc-desc">{{svc.description}}</text>
           <view class="svc-footer">
             <view class="price-row">
-              <text class="price-unit">¥</text>
               <text class="price-num">{{svc.priceYuan}}</text>
+              <text class="price-unit">总裁贝</text>
               <text class="price-per">/{{svc.price_unit}}</text>
             </view>
             <view class="order-btn">下单 ›</view>

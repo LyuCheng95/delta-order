@@ -1,5 +1,5 @@
 const { service } = require('../../../utils/cloud')
-const { fen2yuan, ROUTES } = require('../../../utils/constants')
+const { fen2zb, ROUTES } = require('../../../utils/constants')
 
 Page({
   data: {
@@ -23,7 +23,7 @@ Page({
       cats.forEach(c => { allSvcs[c._id] = [] })
       svcs.forEach(s => {
         if (allSvcs[s.category_id]) {
-          allSvcs[s.category_id].push({ ...s, priceYuan: fen2yuan(s.price) })
+          allSvcs[s.category_id].push({ ...s, priceYuan: fen2zb(s.price) })
         }
       })
       this.setData({ cats, allSvcs })

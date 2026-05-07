@@ -29,7 +29,7 @@
             <view class="divider"/>
             <view class="row-between" style="margin-top:4rpx">
               <text class="t3 xs">{{item.timeStr}}</text>
-              <text class="tg bold" style="font-size:32rpx">¥{{item.totalYuan}}</text>
+              <text class="tg bold" style="font-size:32rpx">{{item.totalYuan}}</text>
             </view>
           </view>
         </view>

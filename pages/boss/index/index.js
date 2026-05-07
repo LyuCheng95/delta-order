@@ -1,5 +1,5 @@
 const { service, order, config } = require('../../../utils/cloud')
-const { fen2yuan, fmtTime, ROUTES } = require('../../../utils/constants')
+const { fen2zb, fmtTime, ROUTES } = require('../../../utils/constants')
 const app = getApp()
 
 Page({
@@ -53,13 +53,13 @@ Page({
           catName:  cat.name,
           icon:     cat.icon,
           services: (svcByCat[cat._id] || []).map(function(s) {
-            return Object.assign({}, s, { priceYuan: fen2yuan(s.price) })
+            return Object.assign({}, s, { priceYuan: fen2zb(s.price) })
           })
         }
       }).filter(function(g) { return g.services.length > 0 })
 
       const active = ((ordersRes && ordersRes.list) || []).slice(0, 5).map(function(o) {
-        return Object.assign({}, o, { totalYuan: fen2yuan(o.total_amount), timeStr: fmtTime(o.created_at) })
+        return Object.assign({}, o, { totalYuan: fen2zb(o.total_amount), timeStr: fmtTime(o.created_at) })
       })
 
       let csQrUrl = (cfgRes && cfgRes.value) || ''

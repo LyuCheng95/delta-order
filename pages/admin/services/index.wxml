@@ -80,7 +80,7 @@
           </view>
           <view class="svc-info" bindtap="goEdit" data-id="{{item._id}}">
             <text class="bold" style="font-size:26rpx;line-height:1.4">{{item.name}}</text>
-            <text class="t3 xs" style="margin-top:4rpx">¥{{item.priceZb}} · {{item.price_unit}}</text>
+            <text class="t3 xs" style="margin-top:4rpx">{{item.priceZb}} · {{item.price_unit}}</text>
           </view>
           <switch checked="{{item.is_active}}" bindchange="onToggleActive"
             data-id="{{item._id}}" color="#00E5FF"
@@ -103,7 +103,7 @@
   <block wx:else>
     <view class="svc-info">
       <text class="bold" style="font-size:26rpx">{{ghostItem.name}}</text>
-      <text class="t3 xs" style="margin-top:4rpx">¥{{ghostItem.priceZb}} · {{ghostItem.price_unit}}</text>
+      <text class="t3 xs" style="margin-top:4rpx">{{ghostItem.priceZb}} · {{ghostItem.price_unit}}</text>
     </view>
   </block>
 </view>

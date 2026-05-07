@@ -41,7 +41,7 @@
             <view class="row" style="gap:16rpx"><image style="width:64rpx;height:64rpx;border-radius:50%" src="{{item.avatar_url}}"/><text class="bold">{{item.nickname}}</text></view>
             <text class="badge badge-completed">在职</text>
           </view>
-          <text class="t2 sm" style="display:block;margin-bottom:8rpx">已完成 <text class="tc bold">{{item.completed_count}}</text> 单 · 累计到账 <text class="tg bold">¥{{item.earnedYuan}}</text></text>
+          <text class="t2 sm" style="display:block;margin-bottom:8rpx">已完成 <text class="tc bold">{{item.completed_count}}</text> 单 · 累计到账 <text class="tg bold">{{item.earnedYuan}}</text></text>
           <text class="t3 sm" style="display:block;margin-bottom:8rpx">当前分成：<text class="bold tc">{{item.share_percent}}%</text>（管理员确认结单时按此比例结算）</text>
           <view wx:if="{{item.contact}}" class="wechat-row" style="margin-bottom:16rpx" catchtap="onCopyContact" data-contact="{{item.contact}}">
             <view class="wx-icon"><text class="wx-icon-text">微</text></view>

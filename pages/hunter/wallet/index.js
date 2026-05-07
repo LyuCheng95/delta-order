@@ -1,5 +1,5 @@
 const { wallet } = require('../../../utils/cloud')
-const { fen2yuan, fmtTime, WITHDRAW_STATUS_LABEL, ROUTES } = require('../../../utils/constants')
+const { fen2zb, fmtTime, WITHDRAW_STATUS_LABEL, ROUTES } = require('../../../utils/constants')
 
 Page({
   data: {
@@ -23,14 +23,14 @@ Page({
       const sum = s || {}
       this.setData({
         summary: {
-          availableYuan: fen2yuan(sum.available_fen),
-          earnedYuan: fen2yuan(sum.earned_fen),
-          pendingYuan: fen2yuan(sum.pending_withdraw_fen),
-          paidOutYuan: fen2yuan(sum.paid_out_fen)
+          availableYuan: fen2zb(sum.available_fen),
+          earnedYuan: fen2zb(sum.earned_fen),
+          pendingYuan: fen2zb(sum.pending_withdraw_fen),
+          paidOutYuan: fen2zb(sum.paid_out_fen)
         },
         records: (list || []).map(r => ({
           ...r,
-          amountYuan: fen2yuan(r.amount_fen),
+          amountYuan: fen2zb(r.amount_fen),
           statusLabel: WITHDRAW_STATUS_LABEL[r.status] || r.status,
           timeStr: fmtTime(r.created_at)
         }))

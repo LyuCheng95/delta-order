@@ -61,7 +61,7 @@
                 <text class="mini-name">{{item.service_snapshot.service_name}}</text>
                 <text class="badge badge-in_progress">进行中</text>
               </view>
-              <text class="mini-price">¥{{item.totalYuan}}</text>
+              <text class="mini-price">{{item.totalYuan}} 总裁贝</text>
               <text class="mini-time">{{item.timeStr}}</text>
             </view>
           </view>
@@ -113,8 +113,8 @@
               </view>
               <view class="svc-right">
                 <view class="svc-price-row">
-                  <text class="svc-price">¥{{svc.priceYuan}}</text>
-                  <text class="svc-unit">/ {{svc.price_unit || '次'}}</text>
+                  <text class="svc-price">{{svc.priceYuan}}</text>
+                  <text class="svc-unit">总裁贝 / {{svc.price_unit || '次'}}</text>
                 </view>
                 <view class="svc-btn">下单</view>
               </view>
