@@ -24,7 +24,7 @@
     "pages/admin/hunters/index",
     "pages/admin/withdrawals/index",
     "pages/admin/category-edit/index",
-    "pages/admin/service-edit/index",
+    "pages/admin/service-edit/index"
   ],
   "tabBar": {
     "custom": true,
