@@ -38,15 +38,16 @@ App({
           data: { action: 'login', code: res.code, nickname: '', avatar_url: '' },
           success: r => {
             console.log('[App] auth 返回:', JSON.stringify(r.result))
-            if (r.result?.code !== 0 || !r.result?.data) {
-              this._loginFailed('auth异常: ' + (r.result?.msg || '无data'))
+            const result = r.result || {}
+            if (result.code !== 0 || !result.data) {
+              this._loginFailed('auth异常: ' + (result.msg || '无data'))
               return
             }
-            const data = r.result.data
+            const data = result.data
             const roles = buildRolesFromAuthData(data)
             const pref = normalizeRole(data.role)
             const role = roles.includes(pref) ? pref : roles[0]
-            console.log('[App] 登录成功 | openid末4位:', data.openid?.slice(-4),
+            console.log('[App] 登录成功 | openid末4位:', data.openid ? data.openid.slice(-4) : '????',
               '| roles:', roles, '| role:', role, '| nickname:', data.nickname)
             this.globalData.userInfo   = { ...data, roles, role }
             this.globalData.openid     = data.openid

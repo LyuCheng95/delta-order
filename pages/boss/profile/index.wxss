@@ -1,6 +1,6 @@
-.page { background: var(--bg-base); height: 100%; display: flex; flex-direction: column; }
+.page { background: var(--bg-base); height: 100vh; min-height: 0; display: flex; flex-direction: column; }
 .page-scroll {
-  flex: 1; height: 0;
+  flex: 1; min-height: 0;
   padding: 32rpx 32rpx calc(32rpx + 132rpx + constant(safe-area-inset-bottom));
   padding: 32rpx 32rpx calc(32rpx + 132rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;

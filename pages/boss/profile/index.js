@@ -63,7 +63,7 @@ Page({
     const isHunter = hasRole(roles, 'hunter')
     this.setData({ nickname: u.nickname || '玩家', avatarUrl: u.avatar_url || '', isAdmin, isHunter, contact: u.contact || '' })
     if (!isHunter) {
-      this._updateHunterUI(u.hunter_info?.apply_status || 'none')
+      this._updateHunterUI((u.hunter_info && u.hunter_info.apply_status) || 'none')
     }
     this._loadWallet()
   },
@@ -104,8 +104,8 @@ Page({
       approved: ['切换到陪玩师模式', '你的陪玩师资格已通过，点击切换'],
       rejected: ['重新申请', '申请未通过，可重新提交']
     }
-    const [t, d] = map[s] || map.none
-    this.setData({ applyStatus: s, hunterTitle: t, hunterDesc: d })
+    const pair = map[s] || map.none
+    this.setData({ applyStatus: s, hunterTitle: pair[0], hunterDesc: pair[1] })
   },
 
   onHunterEntry() {
