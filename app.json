@@ -25,9 +25,6 @@
     "pages/admin/withdrawals/index",
     "pages/admin/category-edit/index",
     "pages/admin/service-edit/index",
-
-    "pages/chat/list/index",
-    "pages/chat/room/index"
   ],
   "tabBar": {
     "custom": true,

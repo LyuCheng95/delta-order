@@ -139,7 +139,7 @@ Page({
 
   // ── 其他 ──
 
-  goChat()   { wx.navigateTo({ url: `${ROUTES.CHAT_ROOM}?orderId=${this.oid}` }) },
+
   goUpdate() { wx.navigateTo({ url: `${ROUTES.HUNTER_UPDATE}?oid=${this.oid}` }) },
 
   previewProof(e) {

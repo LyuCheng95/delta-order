@@ -45,8 +45,6 @@ const ROUTES = {
   ADMIN_WITHDRAWALS:'/pages/admin/withdrawals/index',
   ADMIN_CATEGORY_EDIT: '/pages/admin/category-edit/index',
   ADMIN_SERVICE_EDIT:  '/pages/admin/service-edit/index',
-  CHAT_LIST: '/pages/chat/list/index',
-  CHAT_ROOM: '/pages/chat/room/index'
 }
 
 /**
@@ -94,16 +92,11 @@ const fmtTime = (date) => {
   return `${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-const FEATURES = {
-  CHAT: false
-}
-
 module.exports = {
   STATUS_LABEL,
   WITHDRAW_STATUS_LABEL,
   STORAGE_BOSS_ORDERS_TAB,
   ROUTES,
-  FEATURES,
   ENTERPRISE_WECHAT_CUSTOMER_SERVICE,
   SUBSCRIBE_TEMPLATES,
   fen2yuan,

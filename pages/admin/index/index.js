@@ -1,5 +1,5 @@
-const { auth, order, service, payment, wallet, chat, config } = require('../../../utils/cloud')
-const { fen2yuan, fen2zb, fmtTime, STATUS_LABEL, ROUTES, FEATURES } = require('../../../utils/constants')
+const { auth, order, service, payment, wallet, config } = require('../../../utils/cloud')
+const { fen2yuan, fen2zb, fmtTime, STATUS_LABEL, ROUTES } = require('../../../utils/constants')
 
 const H_LABEL = {
   none: '未申请',
@@ -29,7 +29,6 @@ function fmtWithdraw(r) {
 
 Page({
   data: {
-    chatEnabled: FEATURES.CHAT,
     adminTab: 'orders',
     adminNav: [
       { k: 'orders', l: '订单' },
@@ -38,11 +37,7 @@ Page({
       { k: 'services', l: '服务' },
       { k: 'hunters', l: '陪玩师' },
       { k: 'settings', l: '⚙️设置' },
-      ...(FEATURES.CHAT ? [{ k: 'chat', l: '对话' }] : [])
     ],
-    chatConvs: [],
-    chatUnread: false,
-    chatLoading: false,
 
     orderFilter: '',
     orderTabs: [
@@ -136,77 +131,10 @@ Page({
     else if (t === 'services') this._loadServices()
     else if (t === 'hunters') this._loadHuntersBlock()
     else if (t === 'settings') this._loadSettings()
-    else if (t === 'chat') this._loadChat()
-  },
-
-  async _loadChat() {
-    this.setData({ chatLoading: true })
-    try {
-      const list = await chat.listConversations()
-      const readMap = this._getChatReadMap()
-      this.setData({
-        chatConvs: (list || []).map(c => {
-          const myOid = getApp().globalData.openid || ''
-          const displayName = c.type === 'private'
-            ? ((c.member_snapshots || []).find(s => s.openid !== myOid) || {}).nickname || '私信'
-            : (c.service_name || c.order_no || '订单群聊')
-          return { ...c, displayName, lastTimeStr: fmtTime(c.last_msg_time), hasUnread: this._isChatUnread(c, readMap) }
-        }),
-        chatUnread: false,
-        chatLoading: false
-      })
-    } catch (e) {
-      this.setData({ chatLoading: false })
-    }
-  },
-
-  async _checkUnread() {
-    try {
-      const list = await chat.listConversations()
-      const readMap = this._getChatReadMap()
-      const app = getApp()
-      const myOpenid = app.globalData.openid || ''
-      const hasAny = (list || []).some(c => this._isChatUnread(c, readMap, myOpenid))
-      this.setData({ chatUnread: hasAny })
-    } catch (_) {}
-  },
-
-  _getChatReadMap() {
-    try { return wx.getStorageSync('chat_read_map') || {} } catch { return {} }
-  },
-
-  _isChatUnread(conv, readMap, myOpenid) {
-    if (!conv.last_msg_time || !conv.last_msg) return false
-    const lastTime = new Date(conv.last_msg_time).getTime()
-    const readTime = readMap[conv._id] || 0
-    const app = getApp()
-    const oid = myOpenid || (app && app.globalData.openid) || ''
-    return lastTime > readTime && conv.last_sender_openid !== oid
-  },
-
-  goAdminChat(e) {
-    const { id, name, orderid } = e.currentTarget.dataset
-    try {
-      const map = this._getChatReadMap()
-      map[id] = Date.now()
-      wx.setStorageSync('chat_read_map', map)
-    } catch (_) {}
-    const oidParam = orderid ? `&orderId=${orderid}` : ''
-    wx.navigateTo({ url: `/pages/chat/room/index?convId=${id}&title=${encodeURIComponent(name || '订单群聊')}${oidParam}` })
   },
 
   async onMsgHunter(e) {
-    const { openid, name } = e.currentTarget.dataset
-    if (!openid) return
-    wx.showLoading({ title: '创建会话…' })
-    try {
-      const conv = await chat.getOrCreatePrivateChat({ targetOpenid: openid })
-      wx.hideLoading()
-      wx.navigateTo({ url: `${ROUTES.CHAT_ROOM}?convId=${conv._id}&title=${encodeURIComponent(name || '陪玩师')}` })
-    } catch (e) {
-      wx.hideLoading()
-      wx.showToast({ title: '创建失败', icon: 'none' })
-    }
+    // chat removed
   },
 
   switchOrderFilter(e) {

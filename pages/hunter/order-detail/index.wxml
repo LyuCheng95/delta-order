@@ -70,21 +70,6 @@
         <view wx:if="{{order.earnYuan}}" class="divider"/>
         <view wx:if="{{order.earnYuan}}" class="info-row"><text class="t2 sm">本单您的入账</text><text class="tg bold">¥{{order.earnYuan}}</text></view>
       </view>
-      <!-- 订单群聊入口（进行中以后可用） -->
-      <view
-        wx:if="{{order.status==='in_progress'||order.status==='pending_settlement'||order.status==='completed'}}"
-        class="card chat-entry"
-        bindtap="goChat"
-      >
-        <view class="chat-entry-left">
-          <text style="font-size:40rpx;line-height:1">💬</text>
-          <view>
-            <text class="sm bold" style="display:block">订单群聊</text>
-            <text class="t3 xs">老板 · 陪玩师 · 客服</text>
-          </view>
-        </view>
-        <text class="t3 xs" style="color:var(--primary)">进入 ›</text>
-      </view>
 
       <view class="card">
         <text class="t2 sm sec-title">订单进度</text>
