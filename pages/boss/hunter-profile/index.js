@@ -77,7 +77,7 @@ Page({
 
   previewPortfolio(e) {
     const index = e.currentTarget.dataset.index
-    const urls = this.data.hunter?.portfolio || []
+    const urls = (this.data.hunter && this.data.hunter.portfolio) || []
     if (!urls.length) return
     wx.previewImage({ urls, current: urls[index] || urls[0] })
   },

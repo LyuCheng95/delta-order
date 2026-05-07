@@ -21,7 +21,7 @@ Page({
   },
 
   async onWxPay() {
-    const oid = this.data.order?._id
+    const oid = this.data.order && this.data.order._id
     if (!oid || this.data.paying) return
     this.setData({ paying: true })
     try {

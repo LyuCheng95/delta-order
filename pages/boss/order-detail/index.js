@@ -17,7 +17,7 @@ Page({
   },
 
   _setAdminFlag() {
-    const roles = app.globalData.roles || app.globalData.userInfo?.roles || []
+    const roles = app.globalData.roles || (app.globalData.userInfo && app.globalData.userInfo.roles) || []
     this.setData({ isAdmin: hasRole(roles, 'admin') })
   },
 
@@ -51,7 +51,7 @@ Page({
   },
 
   adminConfirmSettlement() {
-    const id = this.data.order?._id
+    const id = this.data.order && this.data.order._id
     if (!id) return
     wx.showModal({
       title: '确认完成',
@@ -68,7 +68,7 @@ Page({
   },
 
   adminRejectSettlement() {
-    const id = this.data.order?._id
+    const id = this.data.order && this.data.order._id
     if (!id) return
     wx.showModal({
       title: '驳回原因',

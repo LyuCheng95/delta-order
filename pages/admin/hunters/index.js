@@ -47,14 +47,14 @@ Page({
       const d = await auth.listApply()
       const tab = this.data.activeTab
       const list = (d || []).filter(u => {
-        const s = u.hunter_info?.apply_status || 'none'
+        const s = (u.hunter_info && u.hunter_info.apply_status) || 'none'
         if (tab === 'rejected') return s === 'rejected' || s === 'dismissed'
         return s === tab
       })
       this.setData({
         hunters: list.map(u => ({
           ...u,
-          statusLabel: LABEL[u.hunter_info?.apply_status || 'none'] || u.hunter_info?.apply_status
+          statusLabel: LABEL[(u.hunter_info && u.hunter_info.apply_status) || 'none'] || (u.hunter_info && u.hunter_info.apply_status)
         }))
       })
     } finally {

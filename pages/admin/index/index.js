@@ -545,14 +545,14 @@ Page({
       const d = await auth.listApply()
       const tab = this.data.hApplyTab
       const list = (d || []).filter(u => {
-        const s = u.hunter_info?.apply_status || 'none'
+        const s = (u.hunter_info && u.hunter_info.apply_status) || 'none'
         if (tab === 'rejected') return s === 'rejected' || s === 'dismissed'
         return s === tab
       })
       this.setData({
         hunters: list.map(u => ({
           ...u,
-          statusLabel: H_LABEL[u.hunter_info?.apply_status || 'none'] || u.hunter_info?.apply_status
+          statusLabel: H_LABEL[(u.hunter_info && u.hunter_info.apply_status) || 'none'] || (u.hunter_info && u.hunter_info.apply_status)
         }))
       })
     } finally {
@@ -773,7 +773,7 @@ Page({
       if (csQrUrl && csQrUrl.startsWith('cloud://')) {
         try {
           const { fileList } = await wx.cloud.getTempFileURL({ fileList: [csQrUrl] })
-          csQrUrl = fileList[0]?.tempFileURL || csQrUrl
+          csQrUrl = (fileList[0] && fileList[0].tempFileURL) || csQrUrl
         } catch (_) {}
       }
       this.setData({ csQrUrl })
@@ -796,7 +796,7 @@ Page({
       let csQrUrl = up.fileID
       try {
         const { fileList } = await wx.cloud.getTempFileURL({ fileList: [up.fileID] })
-        csQrUrl = fileList[0]?.tempFileURL || csQrUrl
+        csQrUrl = (fileList[0] && fileList[0].tempFileURL) || csQrUrl
       } catch (_) {}
       this.setData({ csQrUrl })
       wx.showToast({ title: '二维码已更新', icon: 'success' })

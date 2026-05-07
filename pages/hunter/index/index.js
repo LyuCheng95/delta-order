@@ -105,7 +105,7 @@ Page({
 
   /** 退出打手中心 → 老板端（需具备老板身份） */
   exitToBoss() {
-    const roles = app.globalData.roles || app.globalData.userInfo?.roles || []
+    const roles = app.globalData.roles || (app.globalData.userInfo && app.globalData.userInfo.roles) || []
     if (!hasRole(roles, 'boss')) {
       wx.showToast({ title: '当前账号无老板身份', icon: 'none' })
       return
@@ -248,7 +248,9 @@ Page({
   async _loadWallet() {
     this.setData({ walletLoading: true })
     try {
-      const [s, list] = await Promise.all([wallet.getSummary(), wallet.listMine()])
+      const walletResults = await Promise.all([wallet.getSummary(), wallet.listMine()])
+      const s = walletResults[0]
+      const list = walletResults[1]
       const sum = s || {}
       const u = app.globalData.userInfo || {}
       const card = u.hunter_info && u.hunter_info.bank_card

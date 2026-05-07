@@ -43,7 +43,7 @@ Page({
     }
     let addon = 0
     const genderVal = this.data.formSelects['gender']
-    if (genderVal && svc.price_modifiers?.gender) {
+    if (genderVal && svc.price_modifiers && svc.price_modifiers.gender) {
       addon = svc.price_modifiers.gender[genderVal] || 0
     }
     const total = (basePrice + addon) * hours
@@ -71,7 +71,7 @@ Page({
   },
 
   async submit() {
-    const fields = this.data.svc?.form_fields || []
+    const fields = (this.data.svc && this.data.svc.form_fields) || []
     for (const f of fields) {
       const v = f.type === 'select' ? this.data.formSelects[f.key] : this.data.formData[f.key]
       if (f.required && !v) { wx.showToast({ title: `请填写${f.label}`, icon: 'none' }); return }

@@ -23,7 +23,7 @@ const callOnce = (name, action, params) =>
         const r = res.result
         if (r && r.code === 0) resolve(r.data)
         else {
-          const msg = r?.msg || '操作失败'
+          const msg = (r && r.msg) || '操作失败'
           wx.showToast({ title: msg, icon: 'none' })
           reject(new Error(msg))
         }
@@ -83,7 +83,7 @@ const dev = {
   submitSettlement:  p  => call('order', 'devSubmitSettlement', p),
   confirmSettlement: p  => call('order', 'confirmSettlement', p),
   clearAllOrders:    () => wx.cloud.callFunction({ name: 'order', data: { action: 'clearAllOrders', secret: 'DELETE_ALL_TEST_ORDERS' } }).then(r => r.result),
-  clearAllWallet:    () => wx.cloud.callFunction({ name: 'wallet', data: { action: 'devClearAll', secret: 'DELETE_ALL_TEST_ORDERS' } }).then(r => { if (!r.result || r.result.code !== 0) throw new Error(r.result?.msg || '清空失败'); return r.result.data }),
+  clearAllWallet:    () => wx.cloud.callFunction({ name: 'wallet', data: { action: 'devClearAll', secret: 'DELETE_ALL_TEST_ORDERS' } }).then(r => { if (!r.result || r.result.code !== 0) throw new Error((r.result && r.result.msg) || '清空失败'); return r.result.data }),
   requestWithdraw:   p  => call('wallet','requestWithdraw', p),
   listPendingWithdraws: () => call('wallet','listPendingAdmin'),
   batchPayWithdraw:  p  => call('wallet','batchReviewWithdraw', p),

@@ -114,7 +114,7 @@ Page({
     if (this.data.uploadingAvatar) return
     try {
       const pick = await wx.chooseMedia({ count: 1, mediaType: ['image'], sizeType: ['compressed'] })
-      const file = pick.tempFiles?.[0]
+      const file = pick.tempFiles && pick.tempFiles[0]
       if (!file) return
       this.setData({ uploadingAvatar: true })
       wx.showLoading({ title: '上传头像…' })
@@ -128,7 +128,7 @@ Page({
       this._updateChecks()
       wx.showToast({ title: '头像已更新', icon: 'success' })
     } catch (e) {
-      if (!e.errMsg?.includes('cancel')) wx.showToast({ title: '上传失败', icon: 'none' })
+      if (!e || !e.errMsg || !e.errMsg.includes('cancel')) wx.showToast({ title: '上传失败', icon: 'none' })
     } finally {
       wx.hideLoading()
       this.setData({ uploadingAvatar: false })
@@ -214,7 +214,7 @@ Page({
       this.setData({ portfolio: [...this.data.portfolio, ...fileIds] })
     } catch (e) {
       wx.hideLoading()
-      if (!e.errMsg?.includes('cancel')) wx.showToast({ title: e.message || '上传失败', icon: 'none' })
+      if (!e || !e.errMsg || !e.errMsg.includes('cancel')) wx.showToast({ title: (e && e.message) || '上传失败', icon: 'none' })
     } finally {
       this.setData({ uploadingPortfolio: false })
     }
@@ -290,7 +290,7 @@ Page({
   goWallet() { wx.navigateTo({ url: ROUTES.HUNTER_WALLET }) },
 
   switchBoss() {
-    const roles = app.globalData.roles || app.globalData.userInfo?.roles || []
+    const roles = app.globalData.roles || (app.globalData.userInfo && app.globalData.userInfo.roles) || []
     if (!hasRole(roles, 'boss')) { wx.showToast({ title: '当前账号无老板身份', icon: 'none' }); return }
     wx.reLaunch({ url: ROUTES.BOSS_HOME })
   },

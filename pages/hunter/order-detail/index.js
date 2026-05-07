@@ -82,7 +82,7 @@ Page({
   selectPartner(e) {
     const h = e.currentTarget.dataset.hunter
     this.setData({
-      selectedPartner: this.data.selectedPartner?.openid === h.openid ? null : h
+      selectedPartner: (this.data.selectedPartner && this.data.selectedPartner.openid === h.openid) ? null : h
     })
   },
 
@@ -98,7 +98,7 @@ Page({
     this.setData({ taking: true })
     try {
       const partner = withPartner ? this.data.selectedPartner : null
-      await order.take({ orderId: this.oid, co_hunter_openid: partner?.openid || '', co_split: partner ? this.data.partnerSplit : 0 })
+      await order.take({ orderId: this.oid, co_hunter_openid: (partner && partner.openid) || '', co_split: partner ? this.data.partnerSplit : 0 })
       if (partner) {
         await order.assignCoHunter({ orderId: this.oid, coHunterOpenid: partner.openid })
       }

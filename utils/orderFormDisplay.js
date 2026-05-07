@@ -22,4 +22,16 @@ function buildFormRows(order) {
   }))
 }
 
-module.exports = { buildFormRows }
+/**
+ * 短摘要：服务名 + 第一个 form_data 值，供大厅列表卡片展示
+ */
+function formatBossBrief(order) {
+  var snap = order.service_snapshot || {}
+  var name = snap.service_name || ''
+  var data = order.form_data || {}
+  var keys = Object.keys(data)
+  var first = keys.length ? String(data[keys[0]]) : ''
+  return first ? name + ' · ' + first : name
+}
+
+module.exports = { buildFormRows, formatBossBrief }

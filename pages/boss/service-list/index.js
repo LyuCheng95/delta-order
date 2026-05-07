@@ -51,7 +51,7 @@ Page({
       const svcs = allSvcs[cid] || []
       const cat = cats.find(c => c._id === cid)
       this.setData({
-        displaySvcs: [{ catId: cid, catName: cat?.name || '', svcs }],
+        displaySvcs: [{ catId: cid, catName: (cat && cat.name) || '', svcs }],
         selectedCat: cid
       })
     }
