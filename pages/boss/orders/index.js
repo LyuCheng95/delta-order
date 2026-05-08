@@ -1,6 +1,5 @@
 const { order } = require('../../../utils/cloud')
 const { fen2zb, fmtTime, STATUS_LABEL, ROUTES, STORAGE_BOSS_ORDERS_TAB } = require('../../../utils/constants')
-const app = getApp()
 
 Page({
   data: {
@@ -10,7 +9,7 @@ Page({
 
   onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 2, showHunterTab: !!app.globalData.hasActiveHunters })
+      this.getTabBar().setData({ selected: 2 })
     }
     let pending = ''
     try {

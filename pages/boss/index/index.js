@@ -24,7 +24,7 @@ Page({
 
   onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 0, showHunterTab: !!app.globalData.hasActiveHunters })
+      this.getTabBar().setData({ selected: 0 })
     }
     this._load()
   },
@@ -42,9 +42,8 @@ Page({
       const ordersRes = results[1]
       const cfgRes    = results[2]
       const hunters   = results[3] || []
-      app.globalData.hasActiveHunters = hunters.length > 0
       if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-        this.getTabBar().setData({ showHunterTab: hunters.length > 0 })
+        this.getTabBar().setData({ showHunterTab: Array.isArray(hunters) && hunters.length > 0 })
       }
 
       const catList = svcData.cats || []

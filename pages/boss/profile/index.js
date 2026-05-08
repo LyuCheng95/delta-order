@@ -54,7 +54,7 @@ Page({
 
   onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 3, showHunterTab: !!app.globalData.hasActiveHunters })
+      this.getTabBar().setData({ selected: 3 })
     }
     const u = app.globalData.userInfo
     if (!u) return
