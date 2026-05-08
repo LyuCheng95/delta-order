@@ -1,4 +1,4 @@
-const { service, order, config } = require('../../../utils/cloud')
+const { service, order, config, auth } = require('../../../utils/cloud')
 const { fen2zb, fmtTime, ROUTES } = require('../../../utils/constants')
 const app = getApp()
 
@@ -24,7 +24,7 @@ Page({
 
   onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 0 })
+      this.getTabBar().setData({ selected: 0, showHunterTab: !!app.globalData.hasActiveHunters })
     }
     this._load()
   },
@@ -35,11 +35,17 @@ Page({
       const results = await Promise.all([
         service.listAllForBoss(),
         order.list({ type: 'boss', status: 'in_progress' }),
-        config.get('cs_qr').catch(() => null)
+        config.get('cs_qr').catch(() => null),
+        auth.listActiveHunters().catch(() => [])
       ])
       const svcData   = results[0] || {}
       const ordersRes = results[1]
       const cfgRes    = results[2]
+      const hunters   = results[3] || []
+      app.globalData.hasActiveHunters = hunters.length > 0
+      if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+        this.getTabBar().setData({ showHunterTab: hunters.length > 0 })
+      }
 
       const catList = svcData.cats || []
       const svcList = svcData.svcs || []

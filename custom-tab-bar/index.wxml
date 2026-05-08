@@ -4,6 +4,7 @@
     <view
       wx:for="{{tabs}}"
       wx:key="path"
+      wx:if="{{!item.hunterOnly || showHunterTab}}"
       class="tab-item {{selected === index ? 'active' : ''}}"
       bindtap="switchTab"
       data-index="{{index}}"
