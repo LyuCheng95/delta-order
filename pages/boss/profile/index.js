@@ -54,7 +54,8 @@ Page({
 
   onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 3 })
+      const roles = app.globalData.roles || (app.globalData.userInfo && app.globalData.userInfo.roles) || []
+      this.getTabBar().setData({ selected: '/pages/boss/profile/index', isHunter: roles.includes('hunter') })
     }
     const u = app.globalData.userInfo
     if (!u) return

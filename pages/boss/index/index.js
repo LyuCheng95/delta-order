@@ -24,7 +24,8 @@ Page({
 
   onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 0 })
+      const roles = (app.globalData.userInfo && app.globalData.userInfo.roles) || []
+      this.getTabBar().setData({ selected: '/pages/boss/index/index', isHunter: roles.includes('hunter') })
     }
     this._load()
   },

@@ -1,5 +1,6 @@
 const { order } = require('../../../utils/cloud')
 const { fen2zb, fmtTime, STATUS_LABEL, ROUTES, STORAGE_BOSS_ORDERS_TAB } = require('../../../utils/constants')
+const app = getApp()
 
 Page({
   data: {
@@ -9,7 +10,8 @@ Page({
 
   onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 2 })
+      const roles = (app.globalData.userInfo && app.globalData.userInfo.roles) || []
+      this.getTabBar().setData({ selected: '/pages/boss/orders/index', isHunter: roles.includes('hunter') })
     }
     let pending = ''
     try {
