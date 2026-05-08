@@ -36,7 +36,7 @@ Page({
         service.listAllForBoss(),
         order.list({ type: 'boss', status: 'in_progress' }),
         config.get('cs_qr').catch(() => null),
-        auth.listActiveHunters().catch(() => [])
+        auth.listHuntersForBoss().catch(() => [])
       ])
       const svcData   = results[0] || {}
       const ordersRes = results[1]
