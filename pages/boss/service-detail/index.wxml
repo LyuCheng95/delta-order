@@ -38,19 +38,57 @@
           <textarea class="textarea-field" placeholder="有什么特殊要求..." value="{{remark}}" bindinput="onRemark" maxlength="200"/>
         </view>
       </view>
-      <!-- 预约打手 -->
+      <!-- 预约时间 -->
+      <view class="card time-picker-card">
+        <view class="designated-header" bindtap="toggleTimePicker">
+          <view class="row" style="align-items:center;gap:12rpx">
+            <text class="md bold">🕐 预约时间</text>
+            <text wx:if="{{preferredTime}}" class="badge badge-in_progress" style="font-size:20rpx">{{preferredTime}}</text>
+            <text wx:else class="t3 xs" style="color:var(--text-3)">选填</text>
+          </view>
+          <text class="t2 sm" style="color:var(--primary)">{{showTimePicker ? '收起' : '设置'}}</text>
+        </view>
+        <block wx:if="{{showTimePicker}}">
+          <view style="margin-top:20rpx">
+            <text class="t2 sm" style="display:block;margin-bottom:12rpx">选择日期</text>
+            <view class="row" style="gap:12rpx;flex-wrap:wrap">
+              <view wx:for="{{dateOptions}}" wx:key="value"
+                class="time-opt {{selectedDate===item.value?'time-opt-active':''}}"
+                bindtap="onSelectDate" data-val="{{item.value}}">
+                <text class="bold sm">{{item.label}}</text>
+                <text class="t3 xs" style="display:block">{{item.sub}}</text>
+              </view>
+            </view>
+          </view>
+          <view style="margin-top:20rpx">
+            <text class="t2 sm" style="display:block;margin-bottom:12rpx">选择时段</text>
+            <view class="row" style="gap:12rpx;flex-wrap:wrap">
+              <view wx:for="{{timeSlots}}" wx:key="*this"
+                class="time-opt {{selectedTime===item?'time-opt-active':''}}"
+                bindtap="onSelectTime" data-val="{{item}}">
+                <text class="sm">{{item}}</text>
+              </view>
+            </view>
+          </view>
+          <view wx:if="{{preferredTime}}" style="margin-top:20rpx;text-align:right">
+            <text class="t3 sm link-text" bindtap="clearPreferredTime">清除预约时间</text>
+          </view>
+        </block>
+      </view>
+
+      <!-- 预约陪玩师 -->
       <view wx:if="{{designatedHunter}}" class="card designated-card">
         <view class="designated-header">
-          <text class="md bold">🗓️ 已预约打手</text>
+          <text class="md bold">🗓️ 已预约陪玩师</text>
           <text class="t3 xs link-text" bindtap="clearHunter">取消预约</text>
         </view>
         <view class="designated-row">
-          <text class="t2 sm">打手：</text>
+          <text class="t2 sm">陪玩师：</text>
           <text class="bold sm">{{designatedHunter.nickname}}</text>
         </view>
         <view wx:if="{{needsCoHunter}}" class="designated-row" style="margin-top:4rpx">
           <text class="t2 sm">搭档：</text>
-          <text class="t3 sm" style="color:var(--text-3)">接单后由打手自行邀请</text>
+          <text class="t3 sm" style="color:var(--text-3)">接单后由陪玩师自行邀请</text>
         </view>
         <view wx:if="{{designatedTimeSlot}}" class="designated-row" style="margin-top:4rpx">
           <text class="t2 sm">预约时间：</text>
@@ -66,13 +104,13 @@
         </view>
         <view wx:if="{{rulesOpen}}" class="rules-body">
           <text class="rule-item">1. 老板阵亡视为炸单，炸单一局加50万保底（对赌单不参与）</text>
-          <text class="rule-item">2. 护航单打手必须起五套及以上，不得私藏红金</text>
-          <text class="rule-item">3. 打手全部阵亡，老板带出超过100万正常计入保底</text>
+          <text class="rule-item">2. 护航单陪玩师必须起五套及以上，不得私藏红金</text>
+          <text class="rule-item">3. 陪玩师全部阵亡，老板带出超过100万正常计入保底</text>
           <text class="rule-item">4. 因老板挂机、掉线、跳河等导致撤离失败，最高可视为结单，无售后</text>
-          <text class="rule-item">5. 订单未一次打完，再次进行需提前3小时预约原打手</text>
+          <text class="rule-item">5. 订单未一次打完，再次进行需提前3小时预约原陪玩师</text>
           <text class="rule-item">6. 对赌单内老板故意私藏/丢弃红金，俱乐部有权扣除保底</text>
           <text class="rule-item">7. 出非洲之心、海洋之泪等特殊红，老板自愿加鸡腿 🍗</text>
-          <text class="rule-item">8. 打手主动加老板微信可举报，举报成功奖励一单+300R</text>
+          <text class="rule-item">8. 陪玩师主动加老板微信可举报，举报成功奖励一单+300R</text>
           <text class="rule-item">9. 所有单结单默认本单无问题，售后请在24小时内联系客服</text>
           <text class="rule-item">10. 陪玩单超时20分钟以上补半价</text>
         </view>

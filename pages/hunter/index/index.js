@@ -103,7 +103,7 @@ Page({
     }
   },
 
-  /** 退出打手中心 → 老板端（需具备老板身份） */
+  /** 退出陪玩师中心 → 老板端（需具备老板身份） */
   exitToBoss() {
     const roles = app.globalData.roles || (app.globalData.userInfo && app.globalData.userInfo.roles) || []
     if (!hasRole(roles, 'boss')) {
@@ -127,7 +127,7 @@ Page({
     const card = hi.bank_card
     const profileComplete = !!(u.avatar_url && u.nickname && hi.bio && (hi.service_tags || []).length > 0)
     this.setData({
-      nickname: u.nickname || '打手',
+      nickname: u.nickname || '陪玩师',
       avatarUrl: u.avatar_url || '',
       nicknameInput: u.nickname || '',
       bankCardDisplay: card ? ('**** **** **** ' + String(card).slice(-4)) : '未填写',
@@ -201,7 +201,7 @@ Page({
     const id = e.currentTarget.dataset.id
     wx.showModal({
       title: '拒绝指定单',
-      content: '确认拒绝？订单将对其他打手开放',
+      content: '确认拒绝？订单将对其他陪玩师开放',
       success: async r => {
         if (!r.confirm) return
         try {

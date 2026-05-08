@@ -39,6 +39,14 @@
         <view wx:if="{{order.remark}}" class="info-row"><text class="t2 sm">备注</text><text class="sm flex1" style="text-align:right;word-break:break-all">{{order.remark}}</text></view>
       </view>
 
+      <!-- 预约时间 -->
+      <view wx:if="{{order.preferred_time}}" class="card">
+        <view class="info-row">
+          <text class="t2 sm">🕐 预约时间</text>
+          <text class="bold" style="color:#ffd700">{{order.preferred_time}}</text>
+        </view>
+      </view>
+
       <view class="card" wx:if="{{order.proofUrls.length}}">
         <text class="t2 sm sec-title">陪玩师完成截图</text>
         <scroll-view scroll-x style="width:100%;white-space:nowrap">

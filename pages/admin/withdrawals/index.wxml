@@ -11,7 +11,7 @@
       <block wx:else>
         <view wx:for="{{pending}}" wx:key="_id" class="card item">
           <view class="row-between" style="margin-bottom:12rpx">
-            <text class="bold">{{item.hunter_nickname || '打手'}}</text>
+            <text class="bold">{{item.hunter_nickname || '陪玩师'}}</text>
             <text class="tg bold" style="font-size:40rpx">{{item.amountYuan}}</text>
           </view>
           <text class="t3 xs" style="display:block;margin-bottom:12rpx">{{item.timeStr}}</text>

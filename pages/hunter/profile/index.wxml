@@ -6,7 +6,7 @@
       <view class="checklist-header">
         <text class="bold sm">主页完整度</text>
         <text wx:if="{{profileReady}}" class="ready-badge">✅ 已上线</text>
-        <text wx:else class="pending-badge">⏸ 未显示在打手列表</text>
+        <text wx:else class="pending-badge">⏸ 未显示在陪玩师列表</text>
       </view>
       <view class="checklist-items">
         <view class="check-item">

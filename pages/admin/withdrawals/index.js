@@ -44,7 +44,7 @@ Page({
     const withdrawId = e.currentTarget.dataset.id
     wx.showModal({
       title: '确认已打款',
-      content: '确认已向打手微信号完成转账？',
+      content: '确认已向陪玩师微信号完成转账？',
       success: async r => {
         if (!r.confirm) return
         try {
@@ -60,7 +60,7 @@ Page({
     const withdrawId = e.currentTarget.dataset.id
     wx.showModal({
       title: '拒绝提现',
-      content: '确定拒绝该提现申请？金额将退回打手余额。',
+      content: '确定拒绝该提现申请？金额将退回陪玩师余额。',
       confirmColor: '#FF4D4F',
       success: async r => {
         if (!r.confirm) return

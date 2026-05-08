@@ -2,21 +2,45 @@ const { service, order, wallet } = require('../../../utils/cloud')
 const { fen2zb, ROUTES, STORAGE_BOSS_ORDERS_TAB } = require('../../../utils/constants')
 const app = getApp()
 
+const DATE_LABELS = ['今天', '明天', '后天']
+const TIME_SLOTS  = ['上午(10:00-12:00)', '下午(14:00-16:00)', '傍晚(17:00-19:00)', '晚上(19:00-21:00)', '深夜(21:00-23:00)']
+
+function buildDateOptions() {
+  var now = new Date()
+  return DATE_LABELS.map(function(label, i) {
+    var d = new Date(now)
+    d.setDate(d.getDate() + i)
+    var m = d.getMonth() + 1
+    var day = d.getDate()
+    return { label: label, sub: m + '/' + day, value: label + '(' + m + '/' + day + ')' }
+  })
+}
+
 Page({
   data: {
     svc: null, formData: {}, formSelects: {}, remark: '', totalZb: '0', submitting: false, rulesOpen: false,
     designatedHunter: null,
-    designatedTimeSlot: ''
+    // 预约时间
+    showTimePicker: false,
+    dateOptions: [],
+    timeSlots: TIME_SLOTS,
+    selectedDate: '',
+    selectedTime: '',
+    preferredTime: ''
   },
 
   onLoad(opt) {
+    this.setData({ dateOptions: buildDateOptions() })
     this._load(opt.sid)
   },
 
   onShow() {
     const dh = app.globalData.designatedHunter  || null
     const ts = app.globalData.designatedTimeSlot || ''
-    this.setData({ designatedHunter: dh, designatedTimeSlot: ts })
+    // 如果从陪玩师页带入了时间，预填到预约时间
+    const update = { designatedHunter: dh }
+    if (ts && !this.data.preferredTime) update.preferredTime = ts
+    this.setData(update)
   },
 
   async _load(sid) {
@@ -65,9 +89,33 @@ Page({
   toggleRules() { this.setData({ rulesOpen: !this.data.rulesOpen }) },
 
   clearHunter() {
-    app.globalData.designatedHunter  = null
+    app.globalData.designatedHunter   = null
     app.globalData.designatedTimeSlot = ''
-    this.setData({ designatedHunter: null, designatedTimeSlot: '' })
+    this.setData({ designatedHunter: null, preferredTime: '', selectedDate: '', selectedTime: '' })
+  },
+
+  toggleTimePicker() { this.setData({ showTimePicker: !this.data.showTimePicker }) },
+
+  onSelectDate(e) {
+    const val = e.currentTarget.dataset.val
+    this.setData({ selectedDate: val })
+    this._buildPreferredTime()
+  },
+
+  onSelectTime(e) {
+    const val = e.currentTarget.dataset.val
+    this.setData({ selectedTime: val })
+    this._buildPreferredTime()
+  },
+
+  _buildPreferredTime() {
+    const d = this.data.selectedDate
+    const t = this.data.selectedTime
+    this.setData({ preferredTime: (d && t) ? d + ' ' + t : (d || t || '') })
+  },
+
+  clearPreferredTime() {
+    this.setData({ preferredTime: '', selectedDate: '', selectedTime: '', showTimePicker: false })
   },
 
   async submit() {
@@ -96,7 +144,7 @@ Page({
         remark: this.data.remark,
         payment_method: useWxpay ? 'wxpay' : 'balance',
         preferred_hunter_openid: dh ? dh.openid : '',
-        preferred_time:          this.data.designatedTimeSlot || ''
+        preferred_time:          this.data.preferredTime || ''
       })
 
       app.globalData.designatedHunter   = null

@@ -103,3 +103,18 @@
   color: var(--primary);
 }
 .designated-add-row:active { opacity: .7; }
+
+/* ── Time picker ── */
+.time-picker-card { border: 1rpx solid var(--border); }
+.time-opt {
+  padding: 14rpx 20rpx; border-radius: 12rpx;
+  background: var(--bg-elevated); border: 1rpx solid var(--border);
+  text-align: center; min-width: 120rpx;
+}
+.time-opt:active { opacity: .75; }
+.time-opt-active {
+  background: var(--primary-subtle);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.time-opt-active .bold, .time-opt-active .sm { color: var(--primary); }

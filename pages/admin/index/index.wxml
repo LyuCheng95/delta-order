@@ -121,7 +121,7 @@
           <view wx:else class="stack">
             <view wx:for="{{wAll}}" wx:key="_id" class="card item">
               <view class="row-between" style="margin-bottom:8rpx">
-                <text class="bold">{{item.hunter_nickname || '打手'}}</text>
+                <text class="bold">{{item.hunter_nickname || '陪玩师'}}</text>
                 <text class="tg bold" style="font-size:36rpx">{{item.amountYuan}}</text>
               </view>
               <view class="row-between">
@@ -191,19 +191,19 @@
             <text class="t3 sm">尚未设置二维码</text>
           </view>
           <button class="btn btn-primary" style="width:100%" loading="{{csQrUploading}}" disabled="{{csQrUploading}}" bindtap="onUploadCsQr">
-            {{csQrUrl ? '更换二维码' : '上传二维码'}} 总裁贝
+            {{csQrUrl ? '更换二维码' : '上传二维码'}}
           </button>
         </view>
       </view>
     </scroll-view>
   </view>
 
-  <!-- —— 打手 —— -->
+  <!-- —— 陪玩师 —— -->
   <view wx:elif="{{adminTab==='hunters'}}" class="admin-flex-col">
     <scroll-view scroll-x class="tabs sub-tabs" enhanced show-scrollbar="{{false}}">
       <view class="tab-row">
         <view class="tab {{hMain==='apply'?'active':''}}" bindtap="switchHMain" data-v="apply">申请审核</view>
-        <view class="tab {{hMain==='manage'?'active':''}}" bindtap="switchHMain" data-v="manage">在职打手</view>
+        <view class="tab {{hMain==='manage'?'active':''}}" bindtap="switchHMain" data-v="manage">在职陪玩师</view>
       </view>
     </scroll-view>
 
@@ -242,7 +242,7 @@
 
     <scroll-view wx:else scroll-y class="admin-list-scroll" refresher-enabled refresher-triggered="{{hRefreshing}}" bindrefresherrefresh="onHRefreshManage">
       <view class="list">
-        <view wx:if="{{!activeHunters.length&&!hLoading}}" class="empty"><text class="empty-icon">👤</text><text>暂无在职打手</text></view>
+        <view wx:if="{{!activeHunters.length&&!hLoading}}" class="empty"><text class="empty-icon">👤</text><text>暂无在职陪玩师</text></view>
         <view wx:for="{{activeHunters}}" wx:key="_id" class="card hunter-card">
           <view class="row-between" style="margin-bottom:12rpx">
             <view class="row" style="display:flex;align-items:center;gap:16rpx">

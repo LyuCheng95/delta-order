@@ -141,7 +141,7 @@ const payment = {
   confirmRechargePay: p  => call('payment', 'confirmRechargePay', p)
 }
 const wallet = {
-  // 打手钱包
+  // 陪玩师钱包
   getSummary:          () => call('wallet', 'getSummary'),
   requestWithdraw:     p  => call('wallet', 'requestWithdraw', p),
   listMine:            () => call('wallet', 'listMine'),

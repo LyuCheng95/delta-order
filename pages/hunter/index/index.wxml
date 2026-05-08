@@ -5,7 +5,7 @@
     <view class="hdr-side">
       <text class="back-link" bindtap="exitToBoss">← 退出</text>
     </view>
-    <text class="xl bold hdr-title">⚔️ 打手中心</text>
+    <text class="xl bold hdr-title">⚔️ 陪玩师中心</text>
     <view class="hdr-side hdr-side-right">
       <text class="settings-btn" bindtap="goProfile">⚙️</text>
     </view>
@@ -13,7 +13,7 @@
 
   <!-- 资料未完善提示 -->
   <view wx:if="{{profileIncomplete}}" class="profile-banner" bindtap="goProfile">
-    <text class="t2 sm">⚠️ 资料未完善，暂不会出现在老板的打手列表</text>
+    <text class="t2 sm">⚠️ 资料未完善，暂不会出现在老板的陪玩师列表</text>
     <text class="t3 xs" style="color:var(--primary);margin-top:4rpx;display:block">点此完善 →</text>
   </view>
 

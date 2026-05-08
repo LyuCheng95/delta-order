@@ -2,7 +2,7 @@
 
   <!-- 选搭档模式提示 -->
   <view wx:if="{{selectMode}}" class="select-mode-banner">
-    <text class="t2 sm">🎯 请选择搭档打手</text>
+    <text class="t2 sm">🎯 请选择搭档陪玩师</text>
     <text class="t3 xs" style="margin-top:4rpx;display:block;color:var(--text-3)">点击选中</text>
   </view>
 

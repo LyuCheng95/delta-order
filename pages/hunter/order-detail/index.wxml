@@ -101,7 +101,7 @@
     <input class="input-field" style="margin-bottom:16rpx" placeholder="搜索陪玩师昵称 / 微信号"
       value="{{keyword}}" bindinput="onKeywordInput"/>
 
-    <!-- 打手列表 -->
+    <!-- 陪玩师列表 -->
     <scroll-view scroll-y style="max-height:320rpx;margin-bottom:16rpx">
       <view wx:if="{{!filteredHunters.length}}" class="t3 sm" style="padding:20rpx 0;text-align:center;color:var(--text-3)">暂无其他在职陪玩师</view>
       <view wx:for="{{filteredHunters}}" wx:key="openid"
