@@ -36,7 +36,7 @@ function hasRole(u, want) {
  * 开发用：老板模拟「已付款」。上架前务必改为 false 并重新部署 order 云函数。
  * 正式环境仅依赖微信支付回调将订单置为 paid。
  */
-const ENABLE_DEV_SIMULATE_PAID = true
+const ENABLE_DEV_SIMULATE_PAID = false
 
 exports.main = async (event, context) => {
   const { OPENID } = cloud.getWXContext()
@@ -241,24 +241,34 @@ async function getDetail(openid, event) {
   return { code: 0, data: { ...ord, hunter_display } }
 }
 
-// 打手接单
+// 陪玩师接单
 async function takeOrder(openid, event) {
   const { orderId } = event
+
+  // 仅陪玩师可接单
+  const user = await getUser(openid)
+  if (!hasRole(user, 'hunter')) throw new Error('仅陪玩师可接单')
+
+  const hunterOid = String(openid || '').trim()
+
+  // 读取订单（用于前置校验）
   const { data: order } = await db.collection('orders').doc(orderId).get()
   if (!order) throw new Error('订单不存在')
   if (order.status !== 'paid') throw new Error('订单状态不可接单')
 
-  const hunterOid = String(openid || '').trim()
-  let hunter_snapshot = { nickname: '打手', avatar_url: '' }
+  // 指定单只允许指定陪玩师接
+  const ph = String(order.preferred_hunter_openid || '').trim()
+  if (ph && ph !== hunterOid) throw new Error('此订单已指定其他陪玩师')
+
+  let hunter_snapshot = { nickname: '陪玩师', avatar_url: '' }
   try {
     const { data: hu } = await db.collection('users').where({ openid: hunterOid }).limit(1).get()
     const u = hu && hu[0]
     if (u) {
-      const hunterNick = (u.hunter_info && String(u.hunter_info.hunter_nickname || '').trim())
-                      || (u.nickname && String(u.nickname).trim())
-                      || '打手'
       hunter_snapshot = {
-        nickname:   hunterNick,
+        nickname:   (u.hunter_info && String(u.hunter_info.hunter_nickname || '').trim())
+                 || String(u.nickname || '').trim()
+                 || '陪玩师',
         avatar_url: u.avatar_url || ''
       }
     }
@@ -266,25 +276,26 @@ async function takeOrder(openid, event) {
     console.warn('[order] takeOrder hunter_snapshot', e)
   }
 
-  await db.collection('orders').doc(orderId).update({
+  // 原子更新：只有 status 仍为 paid 时才成功，防止多人同时接单
+  const result = await db.collection('orders').where({ _id: orderId, status: 'paid' }).update({
     data: {
-      hunter_openid: hunterOid,
+      hunter_openid:  hunterOid,
       hunter_snapshot,
-      status: 'in_progress',
-      taken_at: db.serverDate(),
-      updated_at: db.serverDate()
+      status:         'in_progress',
+      taken_at:       db.serverDate(),
+      updated_at:     db.serverDate()
     }
   })
+  if (!result.stats || result.stats.updated === 0) throw new Error('订单已被其他陪玩师接单')
 
-  // 记录日志
   await db.collection('order_logs').add({ data: {
-    order_id: orderId,
+    order_id:        orderId,
     operator_openid: openid,
-    operator_role: 'hunter',
-    action: '接单',
-    content: '打手已接单，请耐心等待',
-    images: [],
-    created_at: db.serverDate()
+    operator_role:   'hunter',
+    action:          '接单',
+    content:         '陪玩师已接单，请耐心等待',
+    images:          [],
+    created_at:      db.serverDate()
   }})
 
   return { code: 0, data: { status: 'in_progress' } }
@@ -337,49 +348,53 @@ async function adminRemoveOrder(openid, event) {
 async function updateStatus(openid, event) {
   const { orderId, status } = event
   const user = await getUser(openid)
-  if (status === 'completed' && hasRole(user, 'hunter')) {
-    throw new Error('请上传结单截图，由管理员审核通过后入账')
-  }
-  if (status === 'paid') {
-    throw new Error('无效操作')
+  const isAdmin = hasRole(user, 'admin')
+
+  // 完全禁止：completed 必须走结单流程，paid 不允许手动设置，refunded 走 payment.refund
+  if (status === 'paid')      throw new Error('无效操作')
+  if (status === 'completed') throw new Error('请上传结单截图，由管理员审核通过后入账')
+  if (status === 'refunded')  throw new Error('退款请联系管理员')
+
+  const { data: ord } = await db.collection('orders').doc(orderId).get()
+  if (!ord) throw new Error('订单不存在')
+
+  if (!isAdmin) {
+    // 非管理员只能取消自己的订单，且只能在「待付款」或「已付款待接单」状态
+    if (ord.boss_openid !== openid) throw new Error('无权限')
+    if (status !== 'cancelled')     throw new Error('无权限')
+    if (!['pending_payment', 'paid'].includes(ord.status)) {
+      throw new Error('订单已进行中，如需取消请联系管理员')
+    }
   }
 
-  // 退款：将总裁贝退回老板账户
-  if (status === 'refunded') {
-    const { data: ord } = await db.collection('orders').doc(orderId).get()
-    // 只有余额支付的订单才归还总裁贝
-    if (ord && ord.total_amount && ord.boss_openid && ord.payment?.method === 'balance') {
+  // 取消余额支付的订单时退回总裁贝
+  if (status === 'cancelled' && ord.total_amount && ord.boss_openid) {
+    const method = ord.payment && ord.payment.method
+    if (method === 'balance') {
       await db.collection('users').where({ openid: ord.boss_openid }).update({
         data: {
           balance_fen:     _.inc(ord.total_amount),
           total_spent_fen: _.inc(-ord.total_amount),
-          updated_at: db.serverDate()
+          updated_at:      db.serverDate()
         }
       })
     }
   }
 
-  const updateData = { status, updated_at: db.serverDate() }
-  if (status === 'completed') updateData.completed_at = db.serverDate()
+  await db.collection('orders').doc(orderId).update({
+    data: { status, updated_at: db.serverDate() }
+  })
 
-  await db.collection('orders').doc(orderId).update({ data: updateData })
-
-  // 记录日志
-  const labelMap = {
-    completed: '已完成',
-    cancelled: '已取消',
-    disputed: '发起争议',
-    refunded: '已退款'
-  }
+  const labelMap = { cancelled: '已取消', disputed: '发起争议' }
   if (labelMap[status]) {
     await db.collection('order_logs').add({ data: {
-      order_id: orderId,
+      order_id:        orderId,
       operator_openid: openid,
-      operator_role: 'system',
-      action: labelMap[status],
-      content: labelMap[status],
-      images: [],
-      created_at: db.serverDate()
+      operator_role:   isAdmin ? 'admin' : 'boss',
+      action:          labelMap[status],
+      content:         labelMap[status],
+      images:          [],
+      created_at:      db.serverDate()
     }})
   }
   return { code: 0, data: { status } }
@@ -429,7 +444,9 @@ async function confirmSettlement(openid, event) {
   if (ord.status !== 'pending_settlement') throw new Error('订单不在待审核状态')
 
   const hunterOpenid = String(ord.hunter_openid || '').trim()
-  if (!hunterOpenid) throw new Error('订单无打手')
+  if (!hunterOpenid) throw new Error('订单无陪玩师')
+
+  const coHunterOpenid = String(ord.preferred_co_hunter_openid || '').trim()
 
   const { data: hu } = await db.collection('users').where({ openid: hunterOpenid }).limit(1).get()
   const hunter = hu[0] || {}
@@ -439,32 +456,41 @@ async function confirmSettlement(openid, event) {
   share = Math.floor(share)
 
   const total = ord.total_amount || 0
-  const hunter_earn_fen = Math.floor((total * share) / 100)
+  const totalHunterFen = Math.floor((total * share) / 100)
 
-  await db.collection('orders').doc(orderId).update({
-    data: {
-      status: 'completed',
-      hunter_earn_fen,
-      settlement_share_percent: share,
-      completed_at: db.serverDate(),
-      updated_at: db.serverDate(),
-      settlement_confirmed_at: db.serverDate()
-    }
-  })
+  // 双打单：主陪玩师和搭档各得一半
+  const co_hunter_earn_fen = coHunterOpenid ? Math.floor(totalHunterFen / 2) : 0
+  const hunter_earn_fen    = totalHunterFen - co_hunter_earn_fen
+
+  const orderPatch = {
+    status:                   'completed',
+    hunter_earn_fen,
+    settlement_share_percent: share,
+    completed_at:             db.serverDate(),
+    updated_at:               db.serverDate(),
+    settlement_confirmed_at:  db.serverDate()
+  }
+  if (coHunterOpenid) orderPatch.co_hunter_earn_fen = co_hunter_earn_fen
+
+  await db.collection('orders').doc(orderId).update({ data: orderPatch })
+
+  const logContent = coHunterOpenid
+    ? `管理员确认结单，俱乐部分成 ${share}%，主陪玩师入账 ${(hunter_earn_fen/100).toFixed(2)} 元，搭档入账 ${(co_hunter_earn_fen/100).toFixed(2)} 元`
+    : `管理员确认结单，陪玩师分成 ${share}%，入账 ${(hunter_earn_fen/100).toFixed(2)} 元`
 
   await db.collection('order_logs').add({
     data: {
-      order_id: orderId,
+      order_id:        orderId,
       operator_openid: openid,
-      operator_role: 'admin',
-      action: '结单审核通过',
-      content: `管理员确认结单，打手分成 ${share}% ，入账 ${(hunter_earn_fen / 100).toFixed(2)} 元`,
-      images: [],
-      created_at: db.serverDate()
+      operator_role:   'admin',
+      action:          '结单审核通过',
+      content:         logContent,
+      images:          [],
+      created_at:      db.serverDate()
     }
   })
-  console.log('[order] confirmSettlement ok', { orderId, hunterOpenid, hunter_earn_fen, share, total })
-  return { code: 0, data: { status: 'completed', hunter_earn_fen, settlement_share_percent: share } }
+  console.log('[order] confirmSettlement ok', { orderId, hunterOpenid, coHunterOpenid, hunter_earn_fen, co_hunter_earn_fen, share, total })
+  return { code: 0, data: { status: 'completed', hunter_earn_fen, co_hunter_earn_fen, settlement_share_percent: share } }
 }
 
 /** 管理员：驳回结单打回进行中 */

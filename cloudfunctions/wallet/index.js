@@ -98,35 +98,51 @@ function fenFromDoc(o) {
 }
 
 /**
- * 已完成订单分成累计：游标分页拉全量
+ * 已完成订单分成累计：主陪玩师 + 协同陪玩师收益
  */
 async function sumCompletedEarnings(openid) {
   const oid = String(openid || '').trim()
   if (!oid) return 0
   const pageSize = 100
   let lastId = null
-  let sum = 0
+  let primarySum = 0
 
+  // 主陪玩师：游标分页累计 hunter_earn_fen
   const runPaged = async () => {
     for (let round = 0; round < 500; round++) {
       const cond = { hunter_openid: oid, status: 'completed' }
       if (lastId) cond._id = _.gt(lastId)
       const { data } = await db.collection('orders').where(cond).orderBy('_id', 'asc').limit(pageSize).get()
       if (!data || !data.length) break
-      for (const o of data) sum += fenFromDoc(o)
+      for (const o of data) primarySum += fenFromDoc(o)
       lastId = data[data.length - 1]._id
       if (data.length < pageSize) break
     }
-    return sum
+    return primarySum
   }
 
   try {
-    return await runPaged()
+    await runPaged()
   } catch (e) {
     console.error('[wallet] sumCompletedEarnings paged failed, fallback', e)
     const { data } = await db.collection('orders').where({ hunter_openid: oid, status: 'completed' }).limit(1000).get()
-    return (data || []).reduce((s, o) => s + fenFromDoc(o), 0)
+    primarySum = (data || []).reduce((s, o) => s + fenFromDoc(o), 0)
   }
+
+  // 协同陪玩师：单独查 co_hunter_earn_fen
+  let coSum = 0
+  try {
+    const { data: coOrders } = await db.collection('orders')
+      .where({ preferred_co_hunter_openid: oid, status: 'completed' })
+      .field({ co_hunter_earn_fen: true })
+      .limit(1000)
+      .get()
+    coSum = (coOrders || []).reduce((s, o) => s + (Number(o.co_hunter_earn_fen) || 0), 0)
+  } catch (e) {
+    console.error('[wallet] sumCompletedEarnings co-hunter failed', e)
+  }
+
+  return primarySum + coSum
 }
 
 async function sumWithdrawals(openid, statuses) {

@@ -192,16 +192,15 @@ async function confirmPay(openid, event) {
   const { orderId } = event
   const { data: ord } = await db.collection('orders').doc(orderId).get()
   if (!ord) throw new Error('订单不存在')
+  if (ord.boss_openid !== openid) throw new Error('无权限')
 
-  // wx.requestPayment 成功后由客户端调用，直接标记已付款
-  // （无需依赖 HTTP 回调触发器）
   if (ord.status === 'pending_payment') {
     await db.collection('orders').doc(orderId).update({
       data: {
-        status:          'paid',
+        status:            'paid',
         'payment.paid_at': db.serverDate(),
-        paid_at:         db.serverDate(),
-        updated_at:      db.serverDate()
+        paid_at:           db.serverDate(),
+        updated_at:        db.serverDate()
       }
     })
     return { code: 0, data: { status: 'paid' } }
@@ -259,12 +258,17 @@ async function confirmRechargePay(openid, event) {
   if (!rec || rec.openid !== openid) throw new Error('记录不存在')
 
   if (rec.status === 'pending_payment') {
-    await db.collection('recharges').doc(rechargeId).update({
+    // 原子更新：只有状态还是 pending_payment 时才成功，防止与回调并发双重到账
+    const result = await db.collection('recharges').where({
+      _id: rechargeId, status: 'pending_payment'
+    }).update({
       data: { status: 'approved', paid_at: db.serverDate(), updated_at: db.serverDate() }
     })
-    await db.collection('users').where({ openid }).update({
-      data: { balance_fen: _.inc(rec.amount_fen), updated_at: db.serverDate() }
-    })
+    if (result.stats && result.stats.updated > 0) {
+      await db.collection('users').where({ openid }).update({
+        data: { balance_fen: _.inc(rec.amount_fen), updated_at: db.serverDate() }
+      })
+    }
     return { code: 0, data: { status: 'approved' } }
   }
 
@@ -287,12 +291,17 @@ async function handleNotify(body) {
       const { data: recs } = await db.collection('recharges').where({ out_trade_no }).limit(1).get()
       const rec = recs && recs[0]
       if (rec && rec.status === 'pending_payment') {
-        await db.collection('recharges').doc(rec._id).update({
+        // 原子更新：防止与前端 confirmRechargePay 并发双重到账
+        const result = await db.collection('recharges').where({
+          _id: rec._id, status: 'pending_payment'
+        }).update({
           data: { status: 'approved', wx_transaction_id: transaction_id, paid_at: db.serverDate(), updated_at: db.serverDate() }
         })
-        await db.collection('users').where({ openid: rec.openid }).update({
-          data: { balance_fen: _.inc(rec.amount_fen), updated_at: db.serverDate() }
-        })
+        if (result.stats && result.stats.updated > 0) {
+          await db.collection('users').where({ openid: rec.openid }).update({
+            data: { balance_fen: _.inc(rec.amount_fen), updated_at: db.serverDate() }
+          })
+        }
       }
     } else {
       // 订单回调 → 标记已付款
@@ -368,11 +377,22 @@ async function refund(openid, event) {
     return { code: 0, data: { status: 'cancelled' } }
   }
 
-  // 无流水但已付款状态 → 仅标记
+  // 余额支付订单 → 退回总裁贝
+  const method = order.payment && order.payment.method
+  if (method === 'balance' && order.total_amount && order.boss_openid) {
+    await db.collection('users').where({ openid: order.boss_openid }).update({
+      data: {
+        balance_fen:     _.inc(order.total_amount),
+        total_spent_fen: _.inc(-order.total_amount),
+        updated_at:      now
+      }
+    })
+  }
   await db.collection('orders').doc(orderId).update({
     data: { status: 'refunded', 'payment.refunded_at': now,
-            'payment.refund_note': '无微信流水，仅更新状态', updated_at: now }
+            'payment.refund_note': method === 'balance' ? '总裁贝已退回' : '无微信流水，仅更新状态',
+            updated_at: now }
   })
-  await logRefund('无原路退款流水，标记为已退款')
+  await logRefund(method === 'balance' ? '总裁贝退款' : '无原路退款流水，标记为已退款')
   return { code: 0, data: { status: 'refunded' } }
 }
