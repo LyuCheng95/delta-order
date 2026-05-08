@@ -4,18 +4,19 @@
     <view
       wx:for="{{tabs}}"
       wx:key="path"
-      wx:if="{{!item.hunterOnly || isHunter}}"
-      class="tab-item {{selected === item.path ? 'active' : ''}}"
+      class="tab-item {{selected === index ? 'active' : ''}}"
       bindtap="switchTab"
+      data-index="{{index}}"
       data-path="{{item.path}}"
       hover-class="tab-item--hover"
       hover-stay-time="60"
     >
       <view class="tab-label-wrap">
         <text class="tab-text">{{item.label}}</text>
-        <view wx:if="{{item.path === '/pages/boss/orders/index' && hasUnread}}" class="unread-dot"/>
+        <!-- Unread dot on 消息 tab (index 2) -->
+        <view wx:if="{{index === 2 && hasUnread}}" class="unread-dot"/>
       </view>
-      <view class="tab-indicator" wx:if="{{selected === item.path}}" />
+      <view class="tab-indicator" wx:if="{{selected === index}}" />
     </view>
   </view>
 </view>

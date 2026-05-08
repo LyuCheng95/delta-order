@@ -18,7 +18,7 @@ Page({
 
   onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: '/pages/boss/hunters/index', isHunter: true })
+      this.getTabBar().setData({ selected: 1 })
     }
     // check if returning here to pick a co-hunter
     const selectMode    = !!app.globalData.hunterSelectMode
