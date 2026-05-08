@@ -62,13 +62,7 @@ Page({
         return Object.assign({}, o, { totalYuan: fen2zb(o.total_amount), timeStr: fmtTime(o.created_at) })
       })
 
-      let csQrUrl = (cfgRes && cfgRes.value) || ''
-      if (csQrUrl && csQrUrl.startsWith('cloud://')) {
-        try {
-          const tmpRes = await wx.cloud.getTempFileURL({ fileList: [csQrUrl] })
-          csQrUrl = (tmpRes.fileList[0] && tmpRes.fileList[0].tempFileURL) || csQrUrl
-        } catch (_) {}
-      }
+      const csQrUrl = (cfgRes && cfgRes.value) || ''
       this.setData({ groups: groups, activeOrders: active, activeCatIndex: -1, scrollInto: '', csQrUrl: csQrUrl })
     } finally {
       this.setData({ loading: false })

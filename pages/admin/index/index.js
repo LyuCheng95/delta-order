@@ -769,14 +769,7 @@ Page({
   async _loadSettings() {
     try {
       const res = await config.get('cs_qr')
-      let csQrUrl = (res && res.value) || ''
-      if (csQrUrl && csQrUrl.startsWith('cloud://')) {
-        try {
-          const { fileList } = await wx.cloud.getTempFileURL({ fileList: [csQrUrl] })
-          csQrUrl = (fileList[0] && fileList[0].tempFileURL) || csQrUrl
-        } catch (_) {}
-      }
-      this.setData({ csQrUrl })
+      this.setData({ csQrUrl: (res && res.value) || '' })
     } catch (_) {}
   },
 
@@ -793,12 +786,7 @@ Page({
       const up = await wx.cloud.uploadFile({ cloudPath, filePath: file.tempFilePath })
       await config.set('cs_qr', up.fileID)
       wx.hideLoading()
-      let csQrUrl = up.fileID
-      try {
-        const { fileList } = await wx.cloud.getTempFileURL({ fileList: [up.fileID] })
-        csQrUrl = (fileList[0] && fileList[0].tempFileURL) || csQrUrl
-      } catch (_) {}
-      this.setData({ csQrUrl })
+      this.setData({ csQrUrl: up.fileID })
       wx.showToast({ title: '二维码已更新', icon: 'success' })
     } catch (e) {
       wx.hideLoading()
