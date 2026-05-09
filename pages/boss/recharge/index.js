@@ -2,7 +2,7 @@ const { wallet, payment } = require('../../../utils/cloud')
 const { fen2zb } = require('../../../utils/constants')
 
 const PRESETS = [100, 300, 500, 1000, 2000, 5000]
-const STATUS_LABEL = { pending_payment: '待支付', approved: '✅ 已到账', rejected: '❌ 已失败' }
+const STATUS_LABEL = { pending_payment: '处理中', approved: '✅ 已到账', rejected: '❌ 已失败' }
 
 Page({
   data: {
@@ -39,7 +39,7 @@ Page({
       const list = await wallet.listRechargesUser()
       const records = list.map(r => ({
         ...r,
-        amount_zb: fen2zb(r.amount_fen),
+        amount_zb: r.amount_zb != null ? r.amount_zb : fen2zb(r.amount_fen),
         statusLabel: STATUS_LABEL[r.status] || r.status,
         timeStr: _fmt(r.created_at)
       }))
@@ -65,37 +65,66 @@ Page({
   },
 
   async doRecharge() {
-    const amt = Number(this.data.amount)
-    if (!amt || amt < 100) { wx.showToast({ title: '最少充值 100 总裁贝', icon: 'none' }); return }
+    const amt = Number(this.data.amount)   // 单位：总裁贝（= 元）
+    if (!amt || amt < 1) { wx.showToast({ title: '最少充值 1 总裁贝', icon: 'none' }); return }
     if (this.data.paying) return
     this.setData({ paying: true })
+
     try {
-      // 1. 创建充值支付订单
-      const payParams = await payment.createRechargePay({ amount_fen: amt * 100 })
-      // 2. 调起微信支付
+      // 1. 获取虚拟支付配置（offerId）
+      const vpConfig = await payment.getVirtualPayConfig()
+
+      // 2. 创建充值订单记录，拿到 outTradeNo 作为 attachInfo
+      const { rechargeId, outTradeNo } = await payment.createRechargeOrder({ amount_zb: amt })
+
+      // 3. 调起微信虚拟支付
+      //    buyQuantity 单位为虚拟货币数量（1 总裁贝 = 1 元，与 offerId 定价一致）
       await new Promise((resolve, reject) => {
-        wx.requestPayment({
-          timeStamp: payParams.timeStamp,
-          nonceStr:  payParams.nonceStr,
-          package:   payParams.package,
-          signType:  payParams.signType || 'RSA',
-          paySign:   payParams.paySign,
-          success: resolve,
-          fail: reject
+        wx.requestVirtualPayment({
+          offerId:      vpConfig.offerId,
+          buyQuantity:  amt,
+          env:          vpConfig.env,
+          currencyType: vpConfig.currencyType,
+          scene:        0,
+          attachInfo:   outTradeNo,   // 透传给服务端回调，用于匹配充值记录
+          success:      resolve,
+          fail:         reject
         })
       })
-      // 3. 确认到账
-      await payment.confirmRechargePay({ rechargeId: payParams.rechargeId })
-      wx.showToast({ title: '充值成功！', icon: 'success' })
-      this.setData({ tab: 'history', amount: 0, customAmount: '', displayAmount: '0' })
-      await this._loadBalance()
-      this._loadHistory()
+
+      // 4. 稍等后查询到账状态（微信回调会更新记录）
+      wx.showLoading({ title: '正在确认到账…', mask: true })
+      let credited = false
+      for (let i = 0; i < 8; i++) {
+        await new Promise(r => setTimeout(r, 1500))
+        try {
+          const { status } = await payment.queryRecharge({ rechargeId })
+          if (status === 'approved') { credited = true; break }
+          if (status === 'rejected') break
+        } catch (_) {}
+      }
+      wx.hideLoading()
+
+      if (credited) {
+        wx.showToast({ title: '充值成功！', icon: 'success' })
+        this.setData({ tab: 'history', amount: 0, customAmount: '', displayAmount: '0' })
+        await this._loadBalance()
+        this._loadHistory()
+      } else {
+        wx.showModal({
+          title: '充值处理中',
+          content: '支付已完成，总裁贝正在到账，请稍后刷新余额查看。如长时间未到账请联系客服。',
+          showCancel: false
+        })
+        this._loadHistory()
+      }
     } catch (e) {
       const msg = (e && (e.errMsg || e.message)) || ''
       if (msg.includes('cancel')) return
       console.error('[recharge]', e)
       wx.showModal({ title: '充值失败', content: msg || '未知错误', showCancel: false })
     } finally {
+      wx.hideLoading()
       this.setData({ paying: false })
     }
   }

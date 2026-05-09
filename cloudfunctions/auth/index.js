@@ -3,6 +3,49 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
+// ── 内容安全检测 ──
+
+async function checkTextSecurity(openid, content, scene) {
+  if (!content || !String(content).trim()) return
+  try {
+    const result = await cloud.openapi.security.msgSecCheck({
+      openid,
+      scene: scene || 2,
+      version: 2,
+      content: String(content).trim()
+    })
+    const suggest = result && result.result && result.result.suggest
+    if (suggest === 'risky' || suggest === 'review') {
+      throw new Error('VIOLATION')
+    }
+  } catch (e) {
+    if (e.message === 'VIOLATION') throw new Error('内容含有违规信息，请修改后重新提交')
+    console.warn('[msgSecCheck]', e.message)
+  }
+}
+
+async function checkImageSecurity(openid, fileID) {
+  try {
+    const { fileList } = await cloud.getTempFileURL({ fileList: [fileID] })
+    const tempUrl = fileList && fileList[0] && fileList[0].tempFileURL
+    if (!tempUrl) return
+    const result = await cloud.openapi.security.imgSecCheck({
+      openid,
+      scene: 1,
+      version: 2,
+      imageUrl: tempUrl
+    })
+    const suggest = result && result.result && result.result.suggest
+    if (suggest === 'risky' || suggest === 'review') {
+      cloud.deleteFile({ fileList: [fileID] }).catch(() => {})
+      throw new Error('VIOLATION')
+    }
+  } catch (e) {
+    if (e.message === 'VIOLATION') throw new Error('图片含有违规内容，请更换后重试')
+    console.warn('[imgSecCheck]', e.message)
+  }
+}
+
 const ROLES = ['boss', 'hunter', 'admin']
 function normalizeRole(r) {
   const x = String(r == null ? '' : r).trim().toLowerCase()
@@ -202,6 +245,9 @@ async function grantTripleRolesIfSoleUser() {
 // 申请成为打手
 async function applyHunter(openid, event) {
   const { apply_reason, hunter_nickname, contact, bio } = event
+  await checkTextSecurity(openid, hunter_nickname, 5)
+  if (bio) await checkTextSecurity(openid, bio, 2)
+  await checkTextSecurity(openid, apply_reason, 2)
   const updateData = {
     'hunter_info.apply_status':    'pending',
     'hunter_info.apply_reason':    apply_reason,
@@ -221,6 +267,8 @@ async function updateHunterProfile(openid, event) {
   if (!u || !hasRole(u, 'hunter')) throw new Error('无权限')
 
   const { bio, play_style, service_tags, portfolio } = event
+  if (bio !== undefined) await checkTextSecurity(openid, bio, 2)
+  if (play_style !== undefined) await checkTextSecurity(openid, play_style, 2)
   const update = { updated_at: db.serverDate() }
 
   if (bio !== undefined)
@@ -240,6 +288,7 @@ async function updateHunterProfile(openid, event) {
 async function updateAvatar(openid, event) {
   const avatar_url = String(event.avatar_url || '').trim()
   if (!avatar_url) throw new Error('头像地址不能为空')
+  await checkImageSecurity(openid, avatar_url)
   await db.collection('users').where({ openid }).update({
     data: { avatar_url, updated_at: db.serverDate() }
   })
@@ -251,6 +300,7 @@ async function updateNickname(openid, event) {
   const nickname = String(event.nickname || '').trim()
   if (!nickname) throw new Error('昵称不能为空')
   if (nickname.length > 20) throw new Error('昵称最多20个字符')
+  await checkTextSecurity(openid, nickname, 5)
   await db.collection('users').where({ openid }).update({
     data: { nickname, updated_at: db.serverDate() }
   })

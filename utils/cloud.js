@@ -134,11 +134,16 @@ const config = {
   set: (key, value) => call('service', 'setConfig', { key, value })
 }
 const payment = {
-  createPay:          id => call('payment', 'createPay',          { orderId: id }),
-  confirmPay:         id => call('payment', 'confirmPay',         { orderId: id }),
-  refund:             id => call('payment', 'refund',             { orderId: id }),
-  createRechargePay:  p  => call('payment', 'createRechargePay',  p),
-  confirmRechargePay: p  => call('payment', 'confirmRechargePay', p)
+  // 虚拟支付配置（offerId 等）
+  getVirtualPayConfig:  ()  => call('payment', 'getVirtualPayConfig', {}),
+  // 充值：创建待支付记录 → 拿 outTradeNo 传给 wx.requestVirtualPayment attachInfo
+  createRechargeOrder:  p   => call('payment', 'createRechargeOrder', p),
+  // 充值：查询到账状态（轮询用）
+  queryRecharge:        p   => call('payment', 'queryRecharge', p),
+  // 订单支付：用总裁贝余额扣款
+  payOrderWithBalance:  p   => call('payment', 'payOrderWithBalance', p),
+  // 退款（管理员）
+  refund:               id  => call('payment', 'refund', { orderId: id })
 }
 const wallet = {
   // 陪玩师钱包

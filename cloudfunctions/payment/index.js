@@ -1,106 +1,24 @@
-const cloud  = require('wx-server-sdk')
-const crypto = require('crypto')
+const cloud = require('wx-server-sdk')
 const https  = require('https')
-const fs     = require('fs')
-const path   = require('path')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _  = db.command
 
 // ==============================
-//  微信支付 v3 配置
+//  配置（需在云开发控制台→云函数→payment→环境变量中设置）
+//  VP_OFFER_ID: 虚拟支付商品ID，在微信公众平台→小程序→虚拟支付→商品管理中创建后获取
+//  APP_SECRET:  小程序 AppSecret，用于获取 access_token 以调用 ConfirmBillDelivery
 // ==============================
-const MCH_ID     = '1110295029'
-const APP_ID     = 'wx8c1e329827ca748f'
-const API_V3_KEY = '7fs6Taeyv5dIF8imAAXVWKhOSL76tiDh'
-// 支付回调地址：在云控制台 → 云函数 → payment → 触发管理 → 新建HTTP触发器，把生成的URL填到这里
-const NOTIFY_URL = process.env.PAY_NOTIFY_URL || 'https://delta-order.example.com/pay/notify'
-
-// 启动时加载，避免每次请求都读磁盘
-const PRIVATE_KEY = fs.readFileSync(path.join(__dirname, 'apiclient_key.pem'), 'utf8')
-const CERT_SERIAL = (() => {
-  const pem  = fs.readFileSync(path.join(__dirname, 'apiclient_cert.pem'), 'utf8')
-  const cert = new crypto.X509Certificate(pem)
-  return cert.serialNumber  // 大写十六进制
-})()
-
-// ==============================
-//  工具函数
-// ==============================
-const nonceStr = () => crypto.randomBytes(16).toString('hex')
-
-/** RSA-SHA256 签名 */
-const sign = msg =>
-  crypto.createSign('RSA-SHA256').update(msg).sign(PRIVATE_KEY, 'base64')
-
-/** 生成微信支付 v3 Authorization 头 */
-function buildAuth(method, urlStr, body = '') {
-  const ts  = String(Math.floor(Date.now() / 1000))
-  const ns  = nonceStr()
-  const url = new URL(urlStr)
-  const res = url.pathname + (url.search || '')
-  const msg = `${method}\n${res}\n${ts}\n${ns}\n${body}\n`
-  const sig = sign(msg)
-  return {
-    authorization: `WECHATPAY2-SHA256-RSA2048 mchid="${MCH_ID}",nonce_str="${ns}",timestamp="${ts}",serial_no="${CERT_SERIAL}",signature="${sig}"`,
-    timestamp: ts,
-    nonceStr:  ns
-  }
-}
-
-/** 发起 HTTPS 请求 */
-function wxpayRequest(urlStr, method, bodyObj) {
-  return new Promise((resolve, reject) => {
-    const bodyStr = bodyObj ? JSON.stringify(bodyObj) : ''
-    const { authorization } = buildAuth(method, urlStr, bodyStr)
-    const u = new URL(urlStr)
-    const options = {
-      hostname: u.hostname,
-      port: 443,
-      path: u.pathname + (u.search || ''),
-      method,
-      headers: {
-        'Content-Type':  'application/json',
-        'Accept':        'application/json',
-        'Authorization': authorization,
-        'User-Agent':    'delta-order/1.0'
-      }
-    }
-    const req = https.request(options, res => {
-      let raw = ''
-      res.on('data', c => raw += c)
-      res.on('end', () => {
-        try   { resolve({ status: res.statusCode, body: JSON.parse(raw) }) }
-        catch { resolve({ status: res.statusCode, body: raw }) }
-      })
-    })
-    req.on('error', reject)
-    if (bodyStr) req.write(bodyStr)
-    req.end()
-  })
-}
-
-/** 解密微信支付回调 resource */
-function decryptResource(resource) {
-  const { ciphertext, associated_data, nonce } = resource
-  const buf  = Buffer.from(ciphertext, 'base64')
-  const data = buf.slice(0, buf.length - 16)
-  const tag  = buf.slice(buf.length - 16)
-  const dc   = crypto.createDecipheriv('aes-256-gcm', Buffer.from(API_V3_KEY), nonce)
-  dc.setAuthTag(tag)
-  if (associated_data) dc.setAAD(Buffer.from(associated_data))
-  return JSON.parse(Buffer.concat([dc.update(data), dc.final()]).toString('utf8'))
-}
+const APP_ID      = 'wx8c1e329827ca748f'
+const VP_OFFER_ID = process.env.VP_OFFER_ID || 'REPLACE_WITH_VP_OFFER_ID'
+const APP_SECRET  = process.env.APP_SECRET  || ''
 
 // ==============================
 //  角色检查
 // ==============================
 const RLIST = ['boss', 'hunter', 'admin']
-const normalizeRole = r => {
-  const x = String(r == null ? '' : r).trim().toLowerCase()
-  return RLIST.includes(x) ? x : 'boss'
-}
+const normalizeRole = r => { const x = String(r == null ? '' : r).trim().toLowerCase(); return RLIST.includes(x) ? x : 'boss' }
 function hasRoleDoc(doc, want) {
   if (!doc) return false
   const arr = []
@@ -114,14 +32,17 @@ function hasRoleDoc(doc, want) {
 //  主入口
 // ==============================
 exports.main = async (event, context) => {
-  // HTTP 触发器：微信支付回调
+  // HTTP 触发器：接收微信虚拟支付「商品发货通知」回调
   if (event.httpMethod) {
     try {
       const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body
-      return await handleNotify(body)
+      if (body && body.Event === 'xpay_goods_deliver_notify') {
+        return await handleVirtualPayCallback(body)
+      }
+      return { statusCode: 200, body: JSON.stringify({ errcode: 0, errmsg: 'ok' }) }
     } catch (e) {
-      console.error('[payment] notify error', e)
-      return { statusCode: 200, body: JSON.stringify({ code: 'FAIL', message: e.message }) }
+      console.error('[payment] callback error', e)
+      return { statusCode: 200, body: JSON.stringify({ errcode: -1, errmsg: e.message }) }
     }
   }
 
@@ -129,12 +50,12 @@ exports.main = async (event, context) => {
   const action = typeof event.action === 'string' ? event.action.trim() : event.action
   try {
     switch (action) {
-      case 'createPay':         return await createPay(OPENID, event)
-      case 'confirmPay':        return await confirmPay(OPENID, event)
-      case 'createRechargePay': return await createRechargePay(OPENID, event)
-      case 'confirmRechargePay':return await confirmRechargePay(OPENID, event)
-      case 'refund':            return await refund(OPENID, event)
-      default:                  return { code: -1, msg: '未知操作' }
+      case 'getVirtualPayConfig':    return getVirtualPayConfig()
+      case 'createRechargeOrder':    return await createRechargeOrder(OPENID, event)
+      case 'queryRecharge':          return await queryRecharge(OPENID, event)
+      case 'payOrderWithBalance':    return await payOrderWithBalance(OPENID, event)
+      case 'refund':                 return await refund(OPENID, event)
+      default:                       return { code: -1, msg: '未知操作' }
     }
   } catch (e) {
     console.error('[payment]', action, e)
@@ -143,187 +64,270 @@ exports.main = async (event, context) => {
 }
 
 // ==============================
-//  发起 JSAPI 支付
+//  返回虚拟支付前端配置（offerId 等）
 // ==============================
-async function createPay(openid, event) {
-  const { orderId } = event
-  const { data: order } = await db.collection('orders').doc(orderId).get()
-  if (!order)                            throw new Error('订单不存在')
-  if (order.status !== 'pending_payment') throw new Error('订单状态异常，请勿重复支付')
-
-  const ts = String(Math.floor(Date.now() / 1000))
-  const ns = nonceStr()
-
-  const urlStr  = 'https://api.mch.weixin.qq.com/v3/pay/transactions/jsapi'
-  const bodyObj = {
-    appid:       APP_ID,
-    mchid:       MCH_ID,
-    description: `上总裁电竞-${order.service_snapshot?.service_name || '陪玩服务'}`,
-    out_trade_no: order.order_no,
-    notify_url:  NOTIFY_URL,
-    amount:  { total: order.total_amount, currency: 'CNY' },
-    payer:   { openid }
-  }
-
-  const { status, body } = await wxpayRequest(urlStr, 'POST', bodyObj)
-  if (status !== 200 || !body.prepay_id) {
-    console.error('[payment] createPay fail', status, body)
-    throw new Error(body?.message || body?.err_code_des || '创建支付订单失败')
-  }
-
-  const pkg    = `prepay_id=${body.prepay_id}`
-  const payMsg = `${APP_ID}\n${ts}\n${ns}\n${pkg}\n`
-  const paySign = sign(payMsg)
-
-  await db.collection('orders').doc(orderId).update({
-    data: { 'payment.wx_prepay_id': body.prepay_id, updated_at: db.serverDate() }
-  })
-
+function getVirtualPayConfig() {
   return {
     code: 0,
-    data: { timeStamp: ts, nonceStr: ns, package: pkg, signType: 'RSA', paySign }
+    data: {
+      offerId:      VP_OFFER_ID,
+      currencyType: 'CNY',
+      env:          0   // 0=生产，1=沙箱
+    }
   }
 }
 
 // ==============================
-//  确认支付（轮询用）
+//  创建充值订单（虚拟支付前调用，生成 out_trade_no 作为 attachInfo 传给 wx.requestVirtualPayment）
 // ==============================
-async function confirmPay(openid, event) {
-  const { orderId } = event
-  const { data: ord } = await db.collection('orders').doc(orderId).get()
-  if (!ord) throw new Error('订单不存在')
-  if (ord.boss_openid !== openid) throw new Error('无权限')
-
-  if (ord.status === 'pending_payment') {
-    await db.collection('orders').doc(orderId).update({
-      data: {
-        status:            'paid',
-        'payment.paid_at': db.serverDate(),
-        paid_at:           db.serverDate(),
-        updated_at:        db.serverDate()
-      }
-    })
-    return { code: 0, data: { status: 'paid' } }
-  }
-
-  return { code: 0, data: { status: ord.status } }
-}
-
-// ==============================
-//  充值：创建微信支付单
-// ==============================
-async function createRechargePay(openid, event) {
-  const amt = Number(event.amount_fen)
-  if (!amt || amt < 100) throw new Error('充值金额至少 1 元')
+async function createRechargeOrder(openid, event) {
+  const amount_zb = Number(event.amount_zb)   // 单位：总裁贝（= 元）
+  if (!amount_zb || amount_zb < 1) throw new Error('充值金额至少 1 总裁贝')
 
   const outTradeNo = 'RC' + Date.now() + Math.random().toString(36).slice(2, 7).toUpperCase()
   const now = db.serverDate()
   const { _id: rechargeId } = await db.collection('recharges').add({
-    data: { openid, amount_fen: amt, out_trade_no: outTradeNo, status: 'pending_payment', created_at: now, updated_at: now }
+    data: {
+      openid,
+      amount_fen:   amount_zb * 100,   // 存为分
+      amount_zb,
+      out_trade_no: outTradeNo,
+      status:       'pending_payment',
+      source:       'virtual_pay',
+      created_at:   now,
+      updated_at:   now
+    }
   })
 
-  const ts  = String(Math.floor(Date.now() / 1000))
-  const ns  = nonceStr()
-  const urlStr  = 'https://api.mch.weixin.qq.com/v3/pay/transactions/jsapi'
-  const bodyObj = {
-    appid:        APP_ID,
-    mchid:        MCH_ID,
-    description:  `上总裁电竞-充值${Math.floor(amt / 100)}总裁贝`,
-    out_trade_no: outTradeNo,
-    notify_url:   NOTIFY_URL,
-    amount:  { total: amt, currency: 'CNY' },
-    payer:   { openid }
-  }
-
-  const { status, body } = await wxpayRequest(urlStr, 'POST', bodyObj)
-  if (status !== 200 || !body.prepay_id) {
-    try { await db.collection('recharges').doc(rechargeId).remove() } catch (_e) {}
-    console.error('[payment] createRechargePay fail', status, body)
-    throw new Error(body?.message || '创建充值订单失败')
-  }
-
-  const pkg     = `prepay_id=${body.prepay_id}`
-  const paySign = sign(`${APP_ID}\n${ts}\n${ns}\n${pkg}\n`)
-  await db.collection('recharges').doc(rechargeId).update({ data: { wx_prepay_id: body.prepay_id, updated_at: db.serverDate() } })
-
-  return { code: 0, data: { rechargeId, timeStamp: ts, nonceStr: ns, package: pkg, signType: 'RSA', paySign } }
+  return { code: 0, data: { rechargeId, outTradeNo } }
 }
 
 // ==============================
-//  充值：确认状态（支付后查询）
+//  前端轮询充值状态（wx.requestVirtualPayment 回调后使用）
 // ==============================
-async function confirmRechargePay(openid, event) {
+async function queryRecharge(openid, event) {
   const { rechargeId } = event
   const { data: rec } = await db.collection('recharges').doc(rechargeId).get()
   if (!rec || rec.openid !== openid) throw new Error('记录不存在')
-
-  if (rec.status === 'pending_payment') {
-    // 原子更新：只有状态还是 pending_payment 时才成功，防止与回调并发双重到账
-    const result = await db.collection('recharges').where({
-      _id: rechargeId, status: 'pending_payment'
-    }).update({
-      data: { status: 'approved', paid_at: db.serverDate(), updated_at: db.serverDate() }
-    })
-    if (result.stats && result.stats.updated > 0) {
-      await db.collection('users').where({ openid }).update({
-        data: { balance_fen: _.inc(rec.amount_fen), updated_at: db.serverDate() }
-      })
-    }
-    return { code: 0, data: { status: 'approved' } }
-  }
-
-  return { code: 0, data: { status: rec.status } }
+  return { code: 0, data: { status: rec.status, amount_zb: rec.amount_zb } }
 }
 
 // ==============================
-//  支付结果回调（HTTP 触发器）
+//  余额支付服务订单（总裁贝扣款）
 // ==============================
-async function handleNotify(body) {
-  if (!body?.resource)
-    return { statusCode: 200, body: JSON.stringify({ code: 'FAIL', message: 'no resource' }) }
+async function payOrderWithBalance(openid, event) {
+  const { orderId } = event
+  const [{ data: order }, { data: users }] = await Promise.all([
+    db.collection('orders').doc(orderId).get(),
+    db.collection('users').where({ openid }).limit(1).get()
+  ])
+  if (!order)                              throw new Error('订单不存在')
+  if (order.boss_openid !== openid)        throw new Error('无权限')
+  if (order.status !== 'pending_payment')  throw new Error('订单状态异常，请勿重复支付')
 
-  const payData = decryptResource(body.resource)
-  if (payData.trade_state === 'SUCCESS') {
-    const { out_trade_no, transaction_id } = payData
+  const user = users[0]
+  if (!user) throw new Error('用户不存在')
 
-    if (String(out_trade_no).startsWith('RC')) {
-      // 充值回调 → 加余额
-      const { data: recs } = await db.collection('recharges').where({ out_trade_no }).limit(1).get()
-      const rec = recs && recs[0]
-      if (rec && rec.status === 'pending_payment') {
-        // 原子更新：防止与前端 confirmRechargePay 并发双重到账
-        const result = await db.collection('recharges').where({
-          _id: rec._id, status: 'pending_payment'
-        }).update({
-          data: { status: 'approved', wx_transaction_id: transaction_id, paid_at: db.serverDate(), updated_at: db.serverDate() }
-        })
-        if (result.stats && result.stats.updated > 0) {
-          await db.collection('users').where({ openid: rec.openid }).update({
-            data: { balance_fen: _.inc(rec.amount_fen), updated_at: db.serverDate() }
-          })
-        }
+  const balance = user.balance_fen || 0
+  const need    = order.total_amount
+  if (balance < need) {
+    const shortZb = Math.ceil((need - balance) / 100)
+    throw new Error(`总裁贝余额不足，还需充值 ${shortZb} 总裁贝`)
+  }
+
+  // 原子扣款：只有余额 >= need 时才成功，防止并发超扣
+  const deductResult = await db.collection('users')
+    .where({ openid, balance_fen: _.gte(need) })
+    .update({
+      data: {
+        balance_fen:     _.inc(-need),
+        total_spent_fen: _.inc(need),
+        updated_at:      db.serverDate()
       }
-    } else {
-      // 订单回调 → 标记已付款
-      const { data } = await db.collection('orders').where({ order_no: out_trade_no }).limit(1).get()
-      if (data.length && data[0].status !== 'paid') {
-        await db.collection('orders').doc(data[0]._id).update({
+    })
+
+  if (!deductResult.stats || deductResult.stats.updated === 0) {
+    throw new Error('扣款失败，请刷新后重试')
+  }
+
+  // 标记订单已付款
+  await db.collection('orders').doc(orderId).update({
+    data: {
+      status:            'paid',
+      'payment.method':  'balance',
+      'payment.paid_at': db.serverDate(),
+      paid_at:           db.serverDate(),
+      updated_at:        db.serverDate()
+    }
+  })
+
+  return { code: 0, data: { status: 'paid' } }
+}
+
+// ==============================
+//  微信虚拟支付「商品发货通知」回调
+//  文档：https://developers.weixin.qq.com/miniprogram/dev/platform-capabilities/business-capabilities/virtual-payment.html
+//
+//  字段说明：
+//    FromUserName  - 用户 openid
+//    OrderId       - 微信侧订单号
+//    BillNo        - 微信侧账单号（幂等 key）
+//    PaidCoin      - 用户实际支付虚拟货币数量（= 总裁贝数量）
+//    Attach        - 透传字段（我们写入 outTradeNo）
+//    TransErrCode  - 0 表示成功
+// ==============================
+async function handleVirtualPayCallback(body) {
+  const {
+    FromUserName: openid,
+    OrderId:      orderId,
+    BillNo:       billNo,
+    PaidCoin:     paidCoin,
+    TransErrCode: errCode,
+    Attach:       outTradeNo
+  } = body
+
+  console.log('[payment] vp callback', { openid, orderId, billNo, paidCoin, errCode, outTradeNo })
+
+  // 交易失败不处理，但要回复 OK 避免 WeChat 重试
+  if (errCode !== 0) {
+    if (outTradeNo) {
+      await db.collection('recharges').where({ out_trade_no: outTradeNo }).update({
+        data: { status: 'rejected', trans_err_code: errCode, updated_at: db.serverDate() }
+      }).catch(() => {})
+    }
+    return { statusCode: 200, body: JSON.stringify({ errcode: 0, errmsg: 'ok' }) }
+  }
+
+  // 幂等：同一 billNo 只处理一次
+  const { data: existing } = await db.collection('recharges')
+    .where({ bill_no: billNo })
+    .limit(1)
+    .get()
+
+  if (!existing.length) {
+    const amountFen = Number(paidCoin) * 100   // 1 总裁贝 = 100 分
+
+    if (outTradeNo) {
+      // 更新已有的充值记录
+      const updated = await db.collection('recharges')
+        .where({ out_trade_no: outTradeNo, status: 'pending_payment' })
+        .update({
           data: {
-            status:                      'paid',
-            'payment.wx_transaction_id': transaction_id,
-            'payment.paid_at':           db.serverDate(),
-            paid_at:                     db.serverDate(),
-            updated_at:                  db.serverDate()
+            status:    'approved',
+            bill_no:   billNo,
+            order_id:  orderId,
+            paid_at:   db.serverDate(),
+            updated_at: db.serverDate()
           }
         })
+      if (!updated.stats || updated.stats.updated === 0) {
+        // 已被处理过，直接确认发货即可
+        await confirmVirtualDelivery(openid, orderId, billNo)
+        return { statusCode: 200, body: JSON.stringify({ errcode: 0, errmsg: 'ok' }) }
       }
+    } else {
+      // 无 outTradeNo（异常情况）：新建一条记录
+      await db.collection('recharges').add({
+        data: {
+          openid,
+          amount_fen:   amountFen,
+          amount_zb:    Number(paidCoin),
+          out_trade_no: null,
+          bill_no:      billNo,
+          order_id:     orderId,
+          status:       'approved',
+          source:       'virtual_pay',
+          paid_at:      db.serverDate(),
+          created_at:   db.serverDate(),
+          updated_at:   db.serverDate()
+        }
+      })
     }
+
+    // 增加余额
+    await db.collection('users').where({ openid }).update({
+      data: { balance_fen: _.inc(amountFen), updated_at: db.serverDate() }
+    })
   }
-  return { statusCode: 200, body: JSON.stringify({ code: 'SUCCESS', message: 'OK' }) }
+
+  // 通知微信完成发货
+  await confirmVirtualDelivery(openid, orderId, billNo)
+
+  return { statusCode: 200, body: JSON.stringify({ errcode: 0, errmsg: 'ok' }) }
 }
 
 // ==============================
-//  退款（管理员操作）
+//  通知微信完成虚拟商品发货
+//  接口：POST /xpay/ConfirmBillDelivery
+//  需要 access_token；在云控制台→云函数 openapi 权限中开启 xpay.confirmBillDelivery
+// ==============================
+async function confirmVirtualDelivery(openid, orderid, billNo) {
+  try {
+    // 优先使用 cloud.openapi（云开发自动管理 token）
+    await cloud.openapi.xpay.confirmBillDelivery({ openid, orderid, bill_no: billNo })
+    return
+  } catch (e) {
+    console.warn('[payment] cloud.openapi.xpay.confirmBillDelivery not available:', e.message)
+  }
+
+  // 回退：手动获取 access_token 并调用
+  if (!APP_SECRET) {
+    console.error('[payment] APP_SECRET 未配置，无法调用 ConfirmBillDelivery')
+    return
+  }
+  try {
+    const token = await getAccessToken()
+    await httpsPost(
+      `https://api.weixin.qq.com/xpay/ConfirmBillDelivery?access_token=${token}`,
+      { openid, orderid, bill_no: billNo }
+    )
+  } catch (e) {
+    console.error('[payment] confirmVirtualDelivery HTTP fallback failed', e)
+  }
+}
+
+// ==============================
+//  获取 access_token（用于发货确认，需配置 APP_SECRET 环境变量）
+// ==============================
+async function getAccessToken() {
+  const url = `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${APP_ID}&secret=${APP_SECRET}`
+  const res = await httpsGet(url)
+  if (!res.access_token) throw new Error('获取 access_token 失败: ' + JSON.stringify(res))
+  return res.access_token
+}
+
+function httpsGet(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url, res => {
+      let raw = ''
+      res.on('data', c => { raw += c })
+      res.on('end', () => { try { resolve(JSON.parse(raw)) } catch { resolve(raw) } })
+    }).on('error', reject)
+  })
+}
+
+function httpsPost(url, body) {
+  return new Promise((resolve, reject) => {
+    const bodyStr = JSON.stringify(body)
+    const u = new URL(url)
+    const req = https.request({
+      hostname: u.hostname, port: 443,
+      path:     u.pathname + (u.search || ''),
+      method:   'POST',
+      headers:  { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyStr) }
+    }, res => {
+      let raw = ''
+      res.on('data', c => { raw += c })
+      res.on('end', () => { try { resolve(JSON.parse(raw)) } catch { resolve(raw) } })
+    })
+    req.on('error', reject)
+    req.write(bodyStr)
+    req.end()
+  })
+}
+
+// ==============================
+//  退款（管理员操作：余额退回总裁贝 / 标记已退）
 // ==============================
 async function refund(openid, event) {
   const { orderId } = event
@@ -332,10 +336,11 @@ async function refund(openid, event) {
 
   const { data: order } = await db.collection('orders').doc(orderId).get()
   if (!order) throw new Error('订单不存在')
+
   const st  = order.status
   const now = db.serverDate()
   if (st === 'refunded' || st === 'cancelled') throw new Error('订单已关闭')
-  if (st === 'completed') throw new Error('已结单入账的订单不可在线退款，请线下处理')
+  if (st === 'completed') throw new Error('已结单的订单不可在线退款，请线下处理')
 
   const logRefund = async content => {
     try {
@@ -344,29 +349,6 @@ async function refund(openid, event) {
                 action: '管理员退款', content, images: [], created_at: now }
       })
     } catch (e) { console.warn('[payment] log', e) }
-  }
-
-  const tx = order.payment?.wx_transaction_id
-  if (tx) {
-    // 有微信流水 → 原路退款
-    const { status, body } = await wxpayRequest(
-      'https://api.mch.weixin.qq.com/v3/refund/domestic/refunds',
-      'POST',
-      {
-        transaction_id: tx,
-        out_refund_no:  'RF' + Date.now(),
-        amount: { refund: order.total_amount, total: order.total_amount, currency: 'CNY' }
-      }
-    )
-    if (status !== 200 && status !== 201) {
-      console.error('[payment] refund fail', status, body)
-      throw new Error(body?.message || '退款失败')
-    }
-    await db.collection('orders').doc(orderId).update({
-      data: { status: 'refunded', 'payment.refunded_at': now, updated_at: now }
-    })
-    await logRefund('微信原路退款')
-    return { code: 0, data: { status: 'refunded' } }
   }
 
   if (st === 'pending_payment') {
@@ -388,11 +370,15 @@ async function refund(openid, event) {
       }
     })
   }
+
   await db.collection('orders').doc(orderId).update({
-    data: { status: 'refunded', 'payment.refunded_at': now,
-            'payment.refund_note': method === 'balance' ? '总裁贝已退回' : '无微信流水，仅更新状态',
-            updated_at: now }
+    data: {
+      status:               'refunded',
+      'payment.refunded_at': now,
+      'payment.refund_note': method === 'balance' ? '总裁贝已退回' : '无支付流水，仅更新状态',
+      updated_at:            now
+    }
   })
-  await logRefund(method === 'balance' ? '总裁贝退款' : '无原路退款流水，标记为已退款')
+  await logRefund(method === 'balance' ? '总裁贝退款' : '标记为已退款')
   return { code: 0, data: { status: 'refunded' } }
 }
