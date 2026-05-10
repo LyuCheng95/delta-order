@@ -245,6 +245,11 @@ async function grantTripleRolesIfSoleUser() {
 // 申请成为打手
 async function applyHunter(openid, event) {
   const { apply_reason, hunter_nickname, contact, bio } = event
+  const { data: users } = await db.collection('users').where({ openid }).limit(1).get()
+  const u = users[0]
+  if (!u) throw new Error('用户不存在')
+  if (u.is_banned) throw new Error('账号已被封禁')
+  if (hasRole(u, 'hunter')) throw new Error('已是在职陪玩师，无需重复申请')
   await checkTextSecurity(openid, hunter_nickname, 5)
   if (bio) await checkTextSecurity(openid, bio, 2)
   await checkTextSecurity(openid, apply_reason, 2)
@@ -400,7 +405,7 @@ async function listActiveHunters(openid) {
   const { data: orders } = await db.collection('orders')
     .where({ status: 'completed' })
     .limit(800)
-    .field({ hunter_openid: true, hunter_earn_fen: true, total_amount: true, co_hunter_openid: true, co_hunter_earn_fen: true })
+    .field({ hunter_openid: true, hunter_earn_fen: true, total_amount: true, preferred_co_hunter_openid: true, co_hunter_earn_fen: true })
     .get()
 
   const stats = {}
@@ -413,7 +418,7 @@ async function listActiveHunters(openid) {
       stats[h].earned_fen += fen
     }
     // 协同打手收益
-    const co = String(o.co_hunter_openid || '').trim()
+    const co = String(o.preferred_co_hunter_openid || '').trim()
     if (co && o.co_hunter_earn_fen > 0) {
       if (!stats[co]) stats[co] = { completed: 0, earned_fen: 0 }
       stats[co].completed++
@@ -430,8 +435,11 @@ async function listActiveHunters(openid) {
   return { code: 0, data: list }
 }
 
-// 在职打手互相查看搭档列表（只要是打手就可以调用，排除自己）
+// 在职打手互相查看搭档列表（只有打手才可以调用，排除自己）
 async function listHuntersForPairing(openid) {
+  const { data: callerArr } = await db.collection('users').where({ openid }).limit(1).get()
+  const caller = callerArr[0]
+  if (!caller || !hasRole(caller, 'hunter')) throw new Error('仅陪玩师可查看搭档列表')
   const { data: all } = await db.collection('users').limit(200).get()
   const list = all
     .filter(u => hasRole(u, 'hunter') && u.openid !== openid)
@@ -511,6 +519,11 @@ async function listHuntersForBoss(bossOpenid) {
   )
   if (!hunters.length) return { code: 0, data: [] }
 
+  // 服务 ID → 名称映射
+  const { data: svcs } = await db.collection('services').limit(500).get()
+  const svcNameMap = {}
+  for (const s of svcs) svcNameMap[s._id] = s.name
+
   // 完成单数
   const { data: orders } = await db.collection('orders')
     .where({ status: 'completed' })
@@ -536,7 +549,7 @@ async function listHuntersForBoss(bossOpenid) {
     avatar_url:    u.avatar_url || '',
     bio:           u.hunter_info?.bio || '',
     play_style:    u.hunter_info?.play_style || '',
-    service_tags:  u.hunter_info?.service_tags || [],
+    service_tags:  (u.hunter_info?.service_tags || []).map(id => svcNameMap[id] || id).filter(Boolean),
     portfolio:     (u.hunter_info?.portfolio || []).slice(0, 3),
     completed_count: completedMap[u.openid] || 0,
     affinity:      affinityMap[u.openid] || 0
