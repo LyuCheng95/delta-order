@@ -99,8 +99,8 @@ Page({
     this.setData({ paying: true })
 
     try {
-      // Create recharge order: server generates pf/pfKey and adjusts buyQuantity for iOS markup
-      const { rechargeId, outTradeNo, buyQuantity, pf, pfKey, offerId, env } =
+      // Create recharge order: server generates all signature fields and adjusts buyQuantity for iOS markup
+      const { rechargeId, outTradeNo, buyQuantity, pf, pfKey, offerId, env, signData, signature, paySig, mode } =
         await payment.createRechargeOrder({ amount_zb: amt, platform: this.data.platform || 'android' })
 
       await new Promise((resolve, reject) => {
@@ -113,6 +113,10 @@ Page({
           pf,
           pfKey,
           attachInfo:   outTradeNo,
+          signData,
+          signature,
+          paySig,
+          mode,
           success:      resolve,
           fail:         reject
         })

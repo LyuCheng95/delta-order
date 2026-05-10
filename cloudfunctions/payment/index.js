@@ -1,17 +1,14 @@
-const cloud = require('wx-server-sdk')
+const cloud  = require('wx-server-sdk')
 const https  = require('https')
+const crypto = require('crypto')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _  = db.command
 
-// ==============================
-//  配置（需在云开发控制台→云函数→payment→环境变量中设置）
-//  VP_OFFER_ID: 虚拟支付商品ID，在微信公众平台→小程序→虚拟支付→商品管理中创建后获取
-//  APP_SECRET:  小程序 AppSecret，用于获取 access_token 以调用 ConfirmBillDelivery
-// ==============================
 const APP_ID      = 'wx8c1e329827ca748f'
-const VP_OFFER_ID = process.env.VP_OFFER_ID || 'REPLACE_WITH_VP_OFFER_ID'
+const VP_OFFER_ID = process.env.VP_OFFER_ID || '1450530251'
+const VP_APP_KEY  = process.env.VP_APP_KEY  || 'EWyJSTOGrreRLHkWSedHPtcV3nxWWWof'
 const APP_SECRET  = process.env.APP_SECRET  || ''
 
 // ==============================
@@ -78,19 +75,43 @@ function getVirtualPayConfig() {
 }
 
 // ==============================
-//  创建充值订单（虚拟支付前调用，生成 out_trade_no 作为 attachInfo 传给 wx.requestVirtualPayment）
+//  工具：构造 pf 和 pfKey
+// ==============================
+function buildPfAndKey(platform) {
+  const pf    = `game_${APP_ID}_virtual_${platform}_${VP_OFFER_ID}`
+  const pfKey = crypto.createHash('md5').update(pf + VP_APP_KEY).digest('hex')
+  return { pf, pfKey }
+}
+
+async function getIosMarkupEnabled() {
+  try {
+    const { data } = await db.collection('app_config').where({ key: 'ios_markup_enabled' }).limit(1).get()
+    return !!(data[0] && data[0].value === true)
+  } catch (_) { return false }
+}
+
+// ==============================
+//  创建充值订单，返回前端调用 wx.requestVirtualPayment 所需全部参数
 // ==============================
 async function createRechargeOrder(openid, event) {
-  const amount_zb = Number(event.amount_zb)   // 单位：总裁贝（= 元）
+  const amount_zb = Number(event.amount_zb)
   if (!amount_zb || amount_zb < 1) throw new Error('充值金额至少 1 总裁贝')
+
+  const platform = String(event.platform || 'android').toLowerCase() === 'ios' ? 'ios' : 'android'
+  const iosMarkupEnabled = platform === 'ios' ? await getIosMarkupEnabled() : false
+  // iOS 开启加价时，buyQuantity 上浮 12%，但 DB 仍存原始金额保证到账正确
+  const buyQuantity = iosMarkupEnabled ? Math.ceil(amount_zb * 1.12) : amount_zb
+  const { pf, pfKey } = buildPfAndKey(platform)
+  const env = 0
 
   const outTradeNo = 'RC' + Date.now() + Math.random().toString(36).slice(2, 7).toUpperCase()
   const now = db.serverDate()
   const { _id: rechargeId } = await db.collection('recharges').add({
     data: {
       openid,
-      amount_fen:   amount_zb * 100,   // 存为分
+      amount_fen:   amount_zb * 100,   // 到账金额（分），不随 iOS 加价变化
       amount_zb,
+      buy_quantity: buyQuantity,
       out_trade_no: outTradeNo,
       status:       'pending_payment',
       source:       'virtual_pay',
@@ -99,7 +120,24 @@ async function createRechargeOrder(openid, event) {
     }
   })
 
-  return { code: 0, data: { rechargeId, outTradeNo } }
+  // 服务端签名（保护 appKey 不外泄）
+  const signParams = {
+    attachInfo:   outTradeNo,
+    buyQuantity:  String(buyQuantity),
+    currencyType: 'CNY',
+    env:          String(env),
+    offerId:      VP_OFFER_ID,
+    scene:        '0'
+  }
+  const signData  = Object.keys(signParams).sort().map(k => `${k}=${signParams[k]}`).join('&')
+  const signature = crypto.createHmac('sha256', VP_APP_KEY).update(signData).digest('hex')
+  const paySig    = pfKey   // MD5(pf + appKey)
+  const mode      = ''
+
+  return {
+    code: 0,
+    data: { rechargeId, outTradeNo, buyQuantity, pf, pfKey, offerId: VP_OFFER_ID, env, signData, signature, paySig, mode }
+  }
 }
 
 // ==============================
@@ -205,32 +243,33 @@ async function handleVirtualPayCallback(body) {
     .get()
 
   if (!existing.length) {
-    const amountFen = Number(paidCoin) * 100   // 1 总裁贝 = 100 分
+    let creditFen
 
     if (outTradeNo) {
-      // 更新已有的充值记录
-      const updated = await db.collection('recharges')
+      // 找到对应的充值记录，使用其存储的 amount_fen（而非 PaidCoin，避免 iOS +12% 多充）
+      const { data: pending } = await db.collection('recharges')
         .where({ out_trade_no: outTradeNo, status: 'pending_payment' })
-        .update({
-          data: {
-            status:    'approved',
-            bill_no:   billNo,
-            order_id:  orderId,
-            paid_at:   db.serverDate(),
-            updated_at: db.serverDate()
-          }
-        })
-      if (!updated.stats || updated.stats.updated === 0) {
-        // 已被处理过，直接确认发货即可
+        .limit(1).get()
+
+      if (!pending.length) {
+        // 已被其他回调处理过，直接确认发货
         await confirmVirtualDelivery(openid, orderId, billNo)
         return { statusCode: 200, body: JSON.stringify({ errcode: 0, errmsg: 'ok' }) }
       }
+
+      const rec = pending[0]
+      creditFen = rec.amount_fen   // 使用创建订单时存储的金额，不受 iOS 加价影响
+
+      await db.collection('recharges').doc(rec._id).update({
+        data: { status: 'approved', bill_no: billNo, order_id: orderId, paid_at: db.serverDate(), updated_at: db.serverDate() }
+      })
     } else {
-      // 无 outTradeNo（异常情况）：新建一条记录
+      // 无 outTradeNo（异常情况）：按实际支付量到账
+      creditFen = Number(paidCoin) * 100
       await db.collection('recharges').add({
         data: {
           openid,
-          amount_fen:   amountFen,
+          amount_fen:   creditFen,
           amount_zb:    Number(paidCoin),
           out_trade_no: null,
           bill_no:      billNo,
@@ -246,7 +285,7 @@ async function handleVirtualPayCallback(body) {
 
     // 增加余额
     await db.collection('users').where({ openid }).update({
-      data: { balance_fen: _.inc(amountFen), updated_at: db.serverDate() }
+      data: { balance_fen: _.inc(creditFen), updated_at: db.serverDate() }
     })
   }
 
