@@ -2,6 +2,14 @@ const { service, order, config, auth } = require('../../../utils/cloud')
 const { fen2zb, fmtTime, ROUTES } = require('../../../utils/constants')
 const app = getApp()
 
+async function resolveFileUrl(fileID) {
+  if (!fileID || !String(fileID).startsWith('cloud://')) return fileID
+  try {
+    const res = await wx.cloud.getTempFileURL({ fileList: [fileID] })
+    return (res.fileList && res.fileList[0] && res.fileList[0].tempFileURL) || fileID
+  } catch (_) { return fileID }
+}
+
 Page({
   data: {
     nickname: '',
@@ -67,7 +75,7 @@ Page({
         return Object.assign({}, o, { totalYuan: fen2zb(o.total_amount), timeStr: fmtTime(o.created_at) })
       })
 
-      const csQrUrl = (cfgRes && cfgRes.value) || ''
+      const csQrUrl = await resolveFileUrl((cfgRes && cfgRes.value) || '')
       this.setData({ groups: groups, activeOrders: active, activeCatIndex: -1, scrollInto: '', csQrUrl: csQrUrl })
     } finally {
       this.setData({ loading: false })

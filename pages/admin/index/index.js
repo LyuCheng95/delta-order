@@ -1,6 +1,14 @@
 const { auth, order, service, payment, wallet, config } = require('../../../utils/cloud')
 const { fen2yuan, fen2zb, fmtTime, STATUS_LABEL, ROUTES } = require('../../../utils/constants')
 
+async function resolveFileUrl(fileID) {
+  if (!fileID || !String(fileID).startsWith('cloud://')) return fileID
+  try {
+    const res = await wx.cloud.getTempFileURL({ fileList: [fileID] })
+    return (res.fileList && res.fileList[0] && res.fileList[0].tempFileURL) || fileID
+  } catch (_) { return fileID }
+}
+
 const H_LABEL = {
   none: '未申请',
   pending: '审核中',
@@ -800,7 +808,8 @@ Page({
   async _loadSettings() {
     try {
       const res = await config.get('cs_qr')
-      this.setData({ csQrUrl: (res && res.value) || '' })
+      const fileID = (res && res.value) || ''
+      this.setData({ csQrUrl: await resolveFileUrl(fileID) })
     } catch (_) {}
   },
 
@@ -821,7 +830,7 @@ Page({
       const up = await wx.cloud.uploadFile({ cloudPath, filePath: file.tempFilePath })
       await config.set('cs_qr', up.fileID)
       wx.hideLoading()
-      this.setData({ csQrUrl: up.fileID })
+      this.setData({ csQrUrl: await resolveFileUrl(up.fileID) })
       wx.showToast({ title: '二维码已更新', icon: 'success' })
     } catch (e) {
       wx.hideLoading()
