@@ -30,6 +30,7 @@ function fmtWithdraw(r) {
 Page({
   data: {
     adminTab: 'orders',
+    iosMarkupEnabled: true,   // 默认 true，onShow 后会刷新
     adminNav: [
       { k: 'orders', l: '订单' },
       { k: 'withdrawals', l: '发工资' },
@@ -38,6 +39,12 @@ Page({
       { k: 'hunters', l: '陪玩师' },
       { k: 'settings', l: '⚙️设置' },
     ],
+    // 代充 tab
+    proxyNickname:  '',
+    proxyResults:   [],
+    proxySelected:  null,
+    proxyAmount:    '',
+    proxying:       false,
 
     orderFilter: '',
     orderTabs: [
@@ -106,8 +113,31 @@ Page({
   },
 
   onShow() {
+    this._loadIosMarkupConfig()
     this._refreshCurrent()
     this._checkUnread()
+  },
+
+  // 加载 iOS 加价开关，同时动态更新导航 tab
+  async _loadIosMarkupConfig() {
+    try {
+      const res = await config.get('ios_markup_enabled')
+      const enabled = !!(res && res.value === true)
+      this.setData({ iosMarkupEnabled: enabled, adminNav: this._buildAdminNav(enabled) })
+    } catch (_) {}
+  },
+
+  _buildAdminNav(iosMarkupEnabled) {
+    const nav = [
+      { k: 'orders',      l: '订单' },
+      { k: 'withdrawals', l: '发工资' },
+      { k: 'recharges',   l: '充值流水' },
+      { k: 'services',    l: '服务' },
+      { k: 'hunters',     l: '陪玩师' },
+    ]
+    if (!iosMarkupEnabled) nav.push({ k: 'proxy_recharge', l: '代充' })
+    nav.push({ k: 'settings', l: '⚙️设置' })
+    return nav
   },
 
   onAdminNav(e) {
@@ -131,6 +161,7 @@ Page({
     else if (t === 'services') this._loadServices()
     else if (t === 'hunters') this._loadHuntersBlock()
     else if (t === 'settings') this._loadSettings()
+    // proxy_recharge: user-driven search, no auto-load needed
   },
 
   async onMsgHunter(e) {
@@ -801,5 +832,66 @@ Page({
     const url = this.data.csQrUrl
     if (!url) return
     wx.previewImage({ urls: [url], current: url })
+  },
+
+  async onToggleIosMarkup(e) {
+    const enabled = e.detail.value
+    try {
+      await config.set('ios_markup_enabled', enabled)
+      this.setData({ iosMarkupEnabled: enabled, adminNav: this._buildAdminNav(enabled) })
+      wx.showToast({ title: enabled ? 'iOS +12% 已开启' : 'iOS +12% 已关闭', icon: 'success' })
+    } catch (_) {
+      this.setData({ iosMarkupEnabled: !enabled })
+      wx.showToast({ title: '保存失败', icon: 'none' })
+    }
+  },
+
+  onProxyNicknameInput(e) {
+    this.setData({ proxyNickname: e.detail.value })
+  },
+
+  async onProxySearch() {
+    const kw = this.data.proxyNickname.trim()
+    if (!kw) { wx.showToast({ title: '请输入昵称', icon: 'none' }); return }
+    try {
+      wx.showLoading({ title: '搜索中…' })
+      const raw = await auth.searchUsersByNickname({ keyword: kw })
+      const results = (raw || []).map(u => ({ ...u, balanceZb: fen2zb(u.balance_fen || 0) }))
+      this.setData({ proxyResults: results, proxySelected: null, proxyAmount: '' })
+      if (!results.length) wx.showToast({ title: '未找到用户', icon: 'none' })
+    } catch (_) {} finally {
+      wx.hideLoading()
+    }
+  },
+
+  selectProxyUser(e) {
+    this.setData({ proxySelected: e.currentTarget.dataset.user, proxyAmount: '' })
+  },
+
+  onProxyAmountInput(e) {
+    this.setData({ proxyAmount: e.detail.value.replace(/[^\d]/g, '') })
+  },
+
+  async onProxyConfirm() {
+    const { proxySelected, proxyAmount, proxying } = this.data
+    if (!proxySelected) { wx.showToast({ title: '请先选择用户', icon: 'none' }); return }
+    const amt = Number(proxyAmount)
+    if (!amt || amt < 1) { wx.showToast({ title: '充值金额至少 1 总裁贝', icon: 'none' }); return }
+    if (proxying) return
+    wx.showModal({
+      title: '确认代充',
+      content: `为「${proxySelected.nickname}」充值 ${amt} 总裁贝？`,
+      success: async r => {
+        if (!r.confirm) return
+        this.setData({ proxying: true })
+        try {
+          await wallet.adminCreditUser({ targetOpenid: proxySelected.openid, amount_zb: amt })
+          wx.showToast({ title: '代充成功', icon: 'success' })
+          this.setData({ proxyNickname: '', proxyResults: [], proxySelected: null, proxyAmount: '' })
+        } catch (_) {} finally {
+          this.setData({ proxying: false })
+        }
+      }
+    })
   }
 })

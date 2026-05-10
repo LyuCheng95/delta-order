@@ -177,10 +177,57 @@
 
   <!-- 服务管理已跳转至独立页面 pages/admin/services/index -->
 
+  <!-- —— 代充 —— -->
+  <view wx:elif="{{adminTab==='proxy_recharge'}}" class="admin-flex-col">
+    <scroll-view scroll-y class="admin-list-scroll">
+      <view style="padding:24rpx">
+        <view class="card" style="margin-bottom:24rpx">
+          <text class="bold sm" style="display:block;margin-bottom:16rpx">按昵称搜索用户</text>
+          <view style="display:flex;gap:12rpx;align-items:center">
+            <input class="input-field" style="flex:1" placeholder="输入用户昵称" value="{{proxyNickname}}" bindinput="onProxyNicknameInput" confirm-type="search" bindconfirm="onProxySearch"/>
+            <button class="btn btn-primary btn-sm" bindtap="onProxySearch">搜索</button>
+          </view>
+        </view>
+
+        <view wx:if="{{proxyResults.length}}" class="card" style="margin-bottom:24rpx">
+          <text class="t2 sm bold" style="display:block;margin-bottom:12rpx">搜索结果</text>
+          <view wx:for="{{proxyResults}}" wx:key="openid"
+            style="display:flex;align-items:center;gap:16rpx;padding:16rpx 0;border-bottom:1rpx solid var(--border)"
+            bindtap="selectProxyUser" data-user="{{item}}">
+            <image style="width:56rpx;height:56rpx;border-radius:50%;flex-shrink:0" src="{{item.avatar_url}}"/>
+            <view style="flex:1;min-width:0">
+              <text class="bold" style="display:block">{{item.nickname}}</text>
+              <text class="t3 xs" style="display:block;margin-top:4rpx">当前余额 {{item.balanceZb}} 总裁贝</text>
+            </view>
+            <text wx:if="{{proxySelected&&proxySelected.openid===item.openid}}" class="tg bold">✓</text>
+          </view>
+        </view>
+
+        <view wx:if="{{proxySelected}}" class="card">
+          <text class="bold sm" style="display:block;margin-bottom:16rpx">为「{{proxySelected.nickname}}」代充</text>
+          <view style="display:flex;align-items:center;gap:12rpx;margin-bottom:24rpx">
+            <input class="input-field" style="flex:1" type="digit" placeholder="充值金额（总裁贝）" value="{{proxyAmount}}" bindinput="onProxyAmountInput"/>
+            <text class="t2 sm">总裁贝</text>
+          </view>
+          <button class="btn btn-primary" style="width:100%" loading="{{proxying}}" disabled="{{proxying}}" bindtap="onProxyConfirm">确认代充</button>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
   <!-- —— 设置 —— -->
   <view wx:elif="{{adminTab==='settings'}}" class="admin-flex-col">
     <scroll-view scroll-y class="admin-list-scroll">
       <view style="padding:24rpx">
+        <view class="card" style="margin-bottom:24rpx">
+          <view class="row-between" style="align-items:center">
+            <view style="flex:1;padding-right:24rpx">
+              <text class="bold sm" style="display:block">iOS 充值 +12%</text>
+              <text class="t2 xs" style="display:block;margin-top:8rpx;color:var(--text-3)">开启后 iOS 用户充值价格上浮 12%（覆盖 Apple 抽成）；关闭后显示「代充」入口</text>
+            </view>
+            <switch checked="{{iosMarkupEnabled}}" bindchange="onToggleIosMarkup" color="var(--primary)"/>
+          </view>
+        </view>
         <view class="card" style="margin-bottom:24rpx">
           <text class="bold sm" style="display:block;margin-bottom:16rpx">客服微信二维码</text>
           <text class="t2 xs" style="display:block;margin-bottom:24rpx;color:var(--text-3)">老板端首页展示此二维码，扫码即可添加客服微信。</text>

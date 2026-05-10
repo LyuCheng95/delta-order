@@ -1,5 +1,6 @@
-const { wallet, payment } = require('../../../utils/cloud')
+const { wallet, payment, config } = require('../../../utils/cloud')
 const { fen2zb } = require('../../../utils/constants')
+const { openEnterpriseCustomerService } = require('../../../utils/customerService')
 
 const PRESETS = [100, 300, 500, 1000, 2000, 5000]
 const STATUS_LABEL = { pending_payment: '处理中', approved: '✅ 已到账', rejected: '❌ 已失败' }
@@ -13,13 +14,27 @@ Page({
     customAmount: '',
     displayAmount: '0',
     paying: false,
-    records: []
+    records: [],
+    platform: '',
+    iosMarkupEnabled: false,
+    showIosNotice: false
   },
 
   onLoad(opts) {
     if (opts.tab === 'history') this.setData({ tab: 'history' })
+    const platform = wx.getSystemInfoSync().platform || ''
+    this.setData({ platform })
+    if (platform === 'ios') this._loadIosConfig()
     this._loadBalance()
     if (this.data.tab === 'history') this._loadHistory()
+  },
+
+  async _loadIosConfig() {
+    try {
+      const res = await config.get('ios_markup_enabled')
+      const enabled = !!(res && res.value === true)
+      this.setData({ iosMarkupEnabled: enabled, showIosNotice: enabled })
+    } catch (_) {}
   },
 
   onShow() {
@@ -65,34 +80,44 @@ Page({
   },
 
   async doRecharge() {
-    const amt = Number(this.data.amount)   // 单位：总裁贝（= 元）
+    const amt = Number(this.data.amount)
     if (!amt || amt < 1) { wx.showToast({ title: '最少充值 1 总裁贝', icon: 'none' }); return }
+
+    // iOS + toggle OFF → direct to customer service for proxy recharge
+    if (this.data.platform === 'ios' && !this.data.iosMarkupEnabled) {
+      wx.showModal({
+        title: 'iOS 暂不支持直接充值',
+        content: '请联系客服，由客服为您代充总裁贝',
+        confirmText: '联系客服',
+        cancelText: '取消',
+        success: r => { if (r.confirm) openEnterpriseCustomerService() }
+      })
+      return
+    }
+
     if (this.data.paying) return
     this.setData({ paying: true })
 
     try {
-      // 1. 获取虚拟支付配置（offerId）
-      const vpConfig = await payment.getVirtualPayConfig()
+      // Create recharge order: server generates pf/pfKey and adjusts buyQuantity for iOS markup
+      const { rechargeId, outTradeNo, buyQuantity, pf, pfKey, offerId, env } =
+        await payment.createRechargeOrder({ amount_zb: amt, platform: this.data.platform || 'android' })
 
-      // 2. 创建充值订单记录，拿到 outTradeNo 作为 attachInfo
-      const { rechargeId, outTradeNo } = await payment.createRechargeOrder({ amount_zb: amt })
-
-      // 3. 调起微信虚拟支付
-      //    buyQuantity 单位为虚拟货币数量（1 总裁贝 = 1 元，与 offerId 定价一致）
       await new Promise((resolve, reject) => {
         wx.requestVirtualPayment({
-          offerId:      vpConfig.offerId,
-          buyQuantity:  amt,
-          env:          vpConfig.env,
-          currencyType: vpConfig.currencyType,
+          offerId,
+          buyQuantity,
+          env,
+          currencyType: 'CNY',
           scene:        0,
-          attachInfo:   outTradeNo,   // 透传给服务端回调，用于匹配充值记录
+          pf,
+          pfKey,
+          attachInfo:   outTradeNo,
           success:      resolve,
           fail:         reject
         })
       })
 
-      // 4. 稍等后查询到账状态（微信回调会更新记录）
       wx.showLoading({ title: '正在确认到账…', mask: true })
       let credited = false
       for (let i = 0; i < 8; i++) {

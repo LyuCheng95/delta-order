@@ -18,6 +18,9 @@
 
   <!-- 充值面板 -->
   <block wx:if="{{tab==='recharge'}}">
+    <view wx:if="{{platform==='ios' && showIosNotice}}" style="margin-bottom:24rpx;padding:20rpx 24rpx;background:#FFF7E6;border-radius:16rpx;border-left:6rpx solid #FA8C16">
+      <text style="font-size:26rpx;color:#AD4E00;line-height:1.6">💡 iOS 端充值含 Apple 服务费，价格上浮 12%。实际到账总裁贝不变。</text>
+    </view>
     <view class="card" style="margin-bottom:24rpx">
       <text class="t2 sm" style="display:block;margin-bottom:16rpx;font-weight:600">选择充值金额（总裁贝）</text>
       <view class="preset-grid">
