@@ -103,8 +103,9 @@ Page({
     }
     this.setData({ showPicker: false })
     const h = this.data.hunter
-    app.globalData.designatedHunter   = { openid: h.openid, nickname: h.nickname }
-    app.globalData.designatedTimeSlot = `${selectedDate} ${selectedTime}`
+    app.globalData.designatedHunter          = { openid: h.openid, nickname: h.nickname }
+    app.globalData.designatedHunterServiceTags = h.service_tags || []
+    app.globalData.designatedTimeSlot        = `${selectedDate} ${selectedTime}`
     wx.navigateTo({ url: ROUTES.BOSS_SVC_LIST })
   }
 })

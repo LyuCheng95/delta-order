@@ -1,5 +1,6 @@
 const { service } = require('../../../utils/cloud')
 const { fen2zb, ROUTES } = require('../../../utils/constants')
+const app = getApp()
 
 Page({
   data: {
@@ -7,7 +8,8 @@ Page({
     allSvcs: {},
     displaySvcs: [],
     selectedCat: '',
-    loading: true
+    loading: true,
+    hunterName: ''
   },
 
   onLoad() {
@@ -18,13 +20,17 @@ Page({
   async _load() {
     this.setData({ loading: true })
     try {
+      const allowedTags = app.globalData.designatedHunterServiceTags || []
+      const dh = app.globalData.designatedHunter
+      if (dh) this.setData({ hunterName: dh.nickname || '' })
+
       const { cats, svcs } = await service.listAllForBoss()
       const allSvcs = {}
       cats.forEach(c => { allSvcs[c._id] = [] })
       svcs.forEach(s => {
-        if (allSvcs[s.category_id]) {
-          allSvcs[s.category_id].push({ ...s, priceYuan: fen2zb(s.price) })
-        }
+        if (!allSvcs[s.category_id]) return
+        if (allowedTags.length > 0 && !allowedTags.includes(s._id)) return
+        allSvcs[s.category_id].push({ ...s, priceYuan: fen2zb(s.price) })
       })
       this.setData({ cats, allSvcs })
       this._filterByCat('')

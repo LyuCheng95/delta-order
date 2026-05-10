@@ -1,5 +1,8 @@
 <view class="page">
 
+  <!-- 指定陪玩师提示 -->
+  <view wx:if="{{hunterName}}" class="hunter-banner">为「{{hunterName}}」选择服务</view>
+
   <!-- 分类 Tab -->
   <scroll-view scroll-x class="cat-bar" wx:if="{{!loading}}">
     <view class="cat-inner">
