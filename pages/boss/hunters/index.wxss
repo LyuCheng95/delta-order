@@ -26,15 +26,20 @@
 /* ── 卡片 ── */
 .hunter-card {
   background: var(--bg-card); border-radius: 24rpx;
-  padding: 24rpx 20rpx; border: 1rpx solid var(--border);
+  padding: 24rpx 20rpx;
+  border: 1rpx solid var(--border);
+  border-top: 1rpx solid rgba(255,255,255,0.06);
+  box-shadow: 0 4rpx 20rpx rgba(0,0,0,.3), inset 0 1rpx 0 rgba(255,255,255,0.04);
   display: flex; flex-direction: column; gap: 10rpx;
 }
-.hunter-card:active { opacity: .8; }
+.hunter-card:active { opacity: .82; transform: scale(0.98); }
 
 .avatar-wrap { position: relative; align-self: center; margin-bottom: 4rpx; }
 .avatar {
   width: 120rpx; height: 120rpx; border-radius: 50%;
-  border: 3rpx solid rgba(255,255,255,.12); display: block;
+  border: 2rpx solid rgba(0,229,255,.3);
+  box-shadow: 0 0 0 4rpx rgba(0,229,255,.07), 0 4rpx 16rpx rgba(0,0,0,.4);
+  display: block;
 }
 .affinity-dot {
   position: absolute; bottom: 0; right: -8rpx;
@@ -56,10 +61,11 @@
 
 .tag-row { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 4rpx; }
 .tag {
-  background: rgba(255,255,255,.06); border: 1rpx solid var(--border);
-  border-radius: 8rpx; font-size: 20rpx; color: var(--text-2);
+  background: rgba(0,229,255,.06); border: 1rpx solid rgba(0,229,255,.18);
+  border-radius: 8rpx; font-size: 20rpx; color: rgba(0,229,255,.75);
   padding: 4rpx 12rpx;
 }
+.tag-more { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.12); color: var(--text-3); }
 
 /* ── 骨架 ── */
 .skeleton-card { height: 280rpx; background: var(--bg-card); border-radius: 24rpx; opacity: .6; }

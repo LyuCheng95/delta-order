@@ -54,9 +54,10 @@
         <!-- 简介 -->
         <text wx:if="{{item.bio}}" class="bio">{{item.bio}}</text>
 
-        <!-- 服务标签 -->
+        <!-- 服务标签（最多3个） -->
         <view wx:if="{{item.service_tags.length}}" class="tag-row">
-          <view wx:for="{{item.service_tags}}" wx:key="*this" wx:for-item="tag" class="tag">{{tag}}</view>
+          <view wx:for="{{item.service_tags}}" wx:key="*this" wx:for-item="tag" wx:if="{{index < 3}}" class="tag">{{tag}}</view>
+          <view wx:if="{{item.service_tags.length > 3}}" class="tag tag-more">+{{item.service_tags.length - 3}}</view>
         </view>
       </view>
     </view>
