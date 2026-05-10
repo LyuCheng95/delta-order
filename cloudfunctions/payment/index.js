@@ -34,8 +34,10 @@ exports.main = async (event, context) => {
     try {
       const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body
       const evt  = body && body.Event
-      if (evt === 'xpay_coin_pay_notify') return await handleCoinPayCallback(body)
-      if (evt === 'xpay_goods_deliver_notify') return await handleVirtualPayCallback(body)
+      if (evt === 'xpay_coin_pay_notify')                    return await handleCoinPayCallback(body)
+      if (evt === 'xpay_goods_deliver_notify')               return await handleVirtualPayCallback(body)
+      if (evt === 'xpay_refund_notify')                      return await handleRefundCallback(body)
+      if (evt === 'xpay_subscribe_ios_refund_query_notify')  return await handleIosRefundQuery(body)
       return { statusCode: 200, body: JSON.stringify({ ErrCode: 0, ErrMsg: 'success' }) }
     } catch (e) {
       console.error('[payment] callback error', e)
@@ -255,6 +257,83 @@ async function handleCoinPayCallback(body) {
   }
 
   return { statusCode: 200, body: JSON.stringify({ ErrCode: 0, ErrMsg: 'success' }) }
+}
+
+// ==============================
+//  退款成功推送（xpay_refund_notify）
+//  RetCode=0 表示退款成功，需扣回用户总裁贝余额
+// ==============================
+async function handleRefundCallback(body) {
+  const { OpenId: openid, MchOrderId: outTradeNo, RefundFee: refundFen, RetCode: retCode } = body
+  console.log('[payment] refund notify', { openid, outTradeNo, refundFen, retCode })
+
+  if (retCode !== 0) {
+    return { statusCode: 200, body: JSON.stringify({ ErrCode: 0, ErrMsg: 'success' }) }
+  }
+
+  // 找到对应的充值记录，扣回余额
+  const { data: recs } = await db.collection('recharges')
+    .where({ out_trade_no: outTradeNo, status: 'approved' })
+    .limit(1).get()
+
+  if (recs.length) {
+    const rec = recs[0]
+    await db.collection('recharges').doc(rec._id).update({
+      data: { status: 'refunded', refunded_at: db.serverDate(), updated_at: db.serverDate() }
+    })
+    // 扣回充值时到账的总裁贝（不超过当前余额）
+    await db.collection('users').where({ openid, balance_fen: _.gte(rec.amount_fen) }).update({
+      data: { balance_fen: _.inc(-rec.amount_fen), updated_at: db.serverDate() }
+    })
+  }
+
+  return { statusCode: 200, body: JSON.stringify({ ErrCode: 0, ErrMsg: 'success' }) }
+}
+
+// ==============================
+//  iOS Apple 支付退款问询（xpay_subscribe_ios_refund_query_notify）
+//  微信最多推送 3 次（间隔 2/4/8s），3 秒内必须响应
+//  result_code: 0=建议退款，1=建议拒绝退款
+//  evidence 为必填凭据，用于退款审计
+// ==============================
+async function handleIosRefundQuery(body) {
+  const { pay_order_id: outTradeNo, p_count: pCount, provide_status: provideStatus } = body
+  console.log('[payment] iOS refund query', { outTradeNo, pCount, provideStatus })
+
+  // 检查用户余额是否仍足以扣回（即币未被完全花出去）
+  try {
+    const { data: recs } = await db.collection('recharges')
+      .where({ out_trade_no: outTradeNo, status: 'approved' })
+      .limit(1).get()
+
+    if (recs.length) {
+      const rec = recs[0]
+      const { data: users } = await db.collection('users').where({ openid: rec.openid }).limit(1).get()
+      const balance = users[0] && users[0].balance_fen || 0
+
+      if (balance >= rec.amount_fen) {
+        // 余额充足：同意退款
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ result_code: 0, result_info: '同意退款', evidence: '用户余额充足，总裁贝尚未使用，同意退款' })
+        }
+      } else {
+        // 余额不足：代币已部分/全部消费，建议拒绝
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ result_code: 1, result_info: '拒绝退款', evidence: '代币已消费使用，无法退款' })
+        }
+      }
+    }
+  } catch (e) {
+    console.error('[payment] iOS refund query error', e)
+  }
+
+  // 查不到记录时默认同意，让 Apple 决定
+  return {
+    statusCode: 200,
+    body: JSON.stringify({ result_code: 0, result_info: '同意退款', evidence: '无法核查记录，建议退款由平台决定' })
+  }
 }
 
 // ==============================
