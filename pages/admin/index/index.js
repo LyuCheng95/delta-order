@@ -606,7 +606,8 @@ Page({
       const list = (d || []).map(u => ({
         ...u,
         earnedYuan: fen2zb(u.earned_fen || 0),
-        share_percent: u.share_percent != null ? u.share_percent : 70
+        share_percent: u.share_percent != null ? u.share_percent : 70,
+        admin_hidden: !!(u.hunter_info && u.hunter_info.admin_hidden)
       }))
       const kw = this.data.hKeyword.trim().toLowerCase()
       this.setData({
@@ -785,6 +786,16 @@ Page({
         success: () => wx.showToast({ title: '微信号已复制，去微信搜索添加', icon: 'none', duration: 2500 })
       })
     }
+  },
+
+  async onHToggleHidden(e) {
+    const openid = e.currentTarget.dataset.openid
+    const hidden = !e.currentTarget.dataset.hidden
+    try {
+      await auth.setHunterAdminHidden({ targetOpenid: openid, hidden })
+      wx.showToast({ title: hidden ? '已隐藏' : '已取消隐藏', icon: 'success' })
+      this._loadHuntersManage()
+    } catch (_) {}
   },
 
   onHDismiss(e) {

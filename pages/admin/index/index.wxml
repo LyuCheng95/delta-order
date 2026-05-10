@@ -301,12 +301,13 @@
               <image style="width:64rpx;height:64rpx;border-radius:50%" src="{{item.avatar_url}}"/>
               <text class="bold">{{item.nickname}}</text>
             </view>
-            <text class="badge badge-completed">在职</text>
+            <text class="badge {{item.admin_hidden?'badge-cancelled':'badge-completed'}}">{{item.admin_hidden?'已隐藏':'展示中'}}</text>
           </view>
           <text class="t2 sm" style="display:block;margin-bottom:8rpx">已完成 <text class="tc bold">{{item.completed_count}}</text> 单 · 累计到账 <text class="tg bold">{{item.earnedYuan}}</text></text>
           <text class="t3 sm" style="display:block;margin-bottom:16rpx">当前分成：<text class="bold tc">{{item.share_percent}}%</text></text>
           <view class="row" style="display:flex;gap:12rpx">
             <button class="btn btn-ghost btn-sm flex1" catchtap="onHEditShare" data-id="{{item._id}}" data-share="{{item.share_percent}}">调整分成</button>
+            <button class="btn btn-ghost btn-sm flex1" catchtap="onHToggleHidden" data-openid="{{item.openid}}" data-hidden="{{item.admin_hidden}}">{{item.admin_hidden?'取消隐藏':'隐藏'}}</button>
             <button class="btn btn-danger btn-sm flex1" catchtap="onHDismiss" data-id="{{item._id}}" data-name="{{item.nickname}}">解雇</button>
           </view>
         </view>

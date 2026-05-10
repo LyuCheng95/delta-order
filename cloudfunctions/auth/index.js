@@ -112,8 +112,9 @@ exports.main = async (event, context) => {
       case 'listHuntersForPairing': return await listHuntersForPairing(OPENID)
       case 'updateHunterShare':   return await updateHunterShare(OPENID, event)
       case 'dismissHunter':       return await dismissHunter(OPENID, event)
-      case 'updateHunterProfile':  return await updateHunterProfile(OPENID, event)
-      case 'listHuntersForBoss':   return await listHuntersForBoss(OPENID)
+      case 'updateHunterProfile':    return await updateHunterProfile(OPENID, event)
+      case 'setHunterAdminHidden':   return await setHunterAdminHidden(OPENID, event)
+      case 'listHuntersForBoss':     return await listHuntersForBoss(OPENID)
       case 'recordHunterView':     return await recordHunterView(OPENID, event)
       case 'getHunterPublic':      return await getHunterPublic(OPENID, event)
       case 'devSeedMockHunters':    return await devSeedMockHunters()
@@ -271,7 +272,7 @@ async function updateHunterProfile(openid, event) {
   const u = users[0]
   if (!u || !hasRole(u, 'hunter')) throw new Error('无权限')
 
-  const { bio, play_style, service_tags, portfolio } = event
+  const { bio, play_style, service_tags, portfolio, is_visible } = event
   if (bio !== undefined) await checkTextSecurity(openid, bio, 2)
   if (play_style !== undefined) await checkTextSecurity(openid, play_style, 2)
   const update = { updated_at: db.serverDate() }
@@ -284,6 +285,8 @@ async function updateHunterProfile(openid, event) {
     update['hunter_info.service_tags'] = Array.isArray(service_tags) ? service_tags.slice(0, 50) : []
   if (portfolio !== undefined)
     update['hunter_info.portfolio'] = Array.isArray(portfolio) ? portfolio.slice(0, 9) : []
+  if (is_visible !== undefined)
+    update['hunter_info.is_visible'] = is_visible !== false
 
   await db.collection('users').where({ openid }).update({ data: update })
   return { code: 0, data: {} }
@@ -505,6 +508,16 @@ async function ensureBossHunterAffinityCol() {
   try { await db.createCollection('boss_hunter_affinity') } catch (_) {}
 }
 
+async function setHunterAdminHidden(openid, event) {
+  await requireAdmin(openid)
+  const { targetOpenid, hidden } = event
+  if (!targetOpenid) throw new Error('缺少 targetOpenid')
+  await db.collection('users').where({ openid: targetOpenid }).update({
+    data: { 'hunter_info.admin_hidden': !!hidden, updated_at: db.serverDate() }
+  })
+  return { code: 0 }
+}
+
 async function listHuntersForBoss(bossOpenid) {
   await ensureBossHunterAffinityCol()
 
@@ -512,6 +525,8 @@ async function listHuntersForBoss(bossOpenid) {
   const hunters = all.filter(u =>
     hasRole(u, 'hunter') &&
     u.hunter_info?.apply_status === 'approved' &&
+    u.hunter_info?.admin_hidden !== true &&
+    u.hunter_info?.is_visible !== false &&
     u.avatar_url &&
     u.nickname &&
     u.hunter_info?.bio &&

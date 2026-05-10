@@ -20,6 +20,7 @@ Page({
     playStyle: '',
     serviceTags: [],
     portfolio: [],
+    isVisible: true,
 
     contact: '',
     bankCard: '',
@@ -47,6 +48,14 @@ Page({
   },
 
   async _loadProfile() {
+    // Always pull fresh data so stale cache (e.g. role not updated after approval) doesn't block saves
+    try {
+      const fresh = await auth.refreshProfile()
+      if (fresh) {
+        app.globalData.userInfo = { ...(app.globalData.userInfo || {}), ...fresh }
+      }
+    } catch (_) {}
+
     const u = app.globalData.userInfo || {}
     const hi = u.hunter_info || {}
     const bio = hi.bio || ''
@@ -63,6 +72,7 @@ Page({
       completedCount: u.completed_count || 0,
       sharePercent: u.share_percent != null ? u.share_percent : 70,
       bio, playStyle, portfolio, serviceTags,
+      isVisible: hi.is_visible !== false,
       contact: u.contact || '',
       bankCard: hi.bank_card ? ('**** **** **** ' + String(hi.bank_card).slice(-4)) : '未填写',
       bankCardInput: hi.bank_card || '',
@@ -156,6 +166,10 @@ Page({
   },
 
   // ── bio / style ──
+
+  onVisibleChange(e) {
+    this.setData({ isVisible: e.detail.value })
+  },
 
   onBioInput(e) {
     const v = e.detail.value
@@ -268,7 +282,8 @@ Page({
         bio: this.data.bio,
         play_style: this.data.playStyle,
         service_tags: this.data.serviceTags,
-        portfolio: this.data.portfolio
+        portfolio: this.data.portfolio,
+        is_visible: this.data.isVisible
       })
       if (app.globalData.userInfo) {
         const hi = app.globalData.userInfo.hunter_info || {}
@@ -276,6 +291,7 @@ Page({
         hi.play_style = this.data.playStyle
         hi.service_tags = this.data.serviceTags
         hi.portfolio = this.data.portfolio
+        hi.is_visible = this.data.isVisible
         app.globalData.userInfo.hunter_info = hi
       }
       wx.showToast({ title: '资料已保存', icon: 'success' })

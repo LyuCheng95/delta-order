@@ -28,6 +28,15 @@
       </view>
     </view>
 
+    <!-- 展示开关 -->
+    <view class="card" style="margin-bottom:24rpx;display:flex;align-items:center;justify-content:space-between">
+      <view>
+        <text class="bold sm" style="display:block">在列表中展示</text>
+        <text class="t2 xs" style="display:block;margin-top:4rpx;color:var(--text-3)">关闭后老板端将看不到你</text>
+      </view>
+      <switch checked="{{isVisible}}" bindchange="onVisibleChange" color="var(--primary)"/>
+    </view>
+
     <!-- 头像 + 昵称 -->
     <view class="hero-card">
       <view class="avatar-wrap" bindtap="onChangeAvatar">
