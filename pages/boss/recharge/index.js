@@ -99,9 +99,12 @@ Page({
     this.setData({ paying: true })
 
     try {
+      // 获取 loginCode（服务端用于换取 session_key 以计算用户态签名 signature）
+      const { code: loginCode } = await wx.login()
+
       // Create recharge order: server generates all signature fields and adjusts buyQuantity for iOS markup
       const { rechargeId, outTradeNo, buyQuantity, pf, pfKey, offerId, env, signData, signature, paySig, mode } =
-        await payment.createRechargeOrder({ amount_zb: amt, platform: this.data.platform || 'android' })
+        await payment.createRechargeOrder({ amount_zb: amt, platform: this.data.platform || 'android', loginCode })
 
       await new Promise((resolve, reject) => {
         wx.requestVirtualPayment({

@@ -29,17 +29,17 @@ function hasRoleDoc(doc, want) {
 //  主入口
 // ==============================
 exports.main = async (event, context) => {
-  // HTTP 触发器：接收微信虚拟支付「商品发货通知」回调
+  // HTTP 触发器：接收微信虚拟支付消息推送
   if (event.httpMethod) {
     try {
       const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body
-      if (body && body.Event === 'xpay_goods_deliver_notify') {
-        return await handleVirtualPayCallback(body)
-      }
-      return { statusCode: 200, body: JSON.stringify({ errcode: 0, errmsg: 'ok' }) }
+      const evt  = body && body.Event
+      if (evt === 'xpay_coin_pay_notify') return await handleCoinPayCallback(body)
+      if (evt === 'xpay_goods_deliver_notify') return await handleVirtualPayCallback(body)
+      return { statusCode: 200, body: JSON.stringify({ ErrCode: 0, ErrMsg: 'success' }) }
     } catch (e) {
       console.error('[payment] callback error', e)
-      return { statusCode: 200, body: JSON.stringify({ errcode: -1, errmsg: e.message }) }
+      return { statusCode: 200, body: JSON.stringify({ ErrCode: -1, ErrMsg: e.message }) }
     }
   }
 
@@ -92,14 +92,26 @@ async function getIosMarkupEnabled() {
 
 // ==============================
 //  创建充值订单，返回前端调用 wx.requestVirtualPayment 所需全部参数
+//
+//  签名规则（官方文档 2.5 签名详解）：
+//    signData  = JSON.stringify(支付参数对象)
+//    signature = HMAC_SHA256(session_key, signData)   ← 用户态签名，需要 loginCode 换 session_key
+//    paySig    = HMAC_SHA256(appKey, "requestVirtualPayment" + "&" + signData)  ← 支付签名
 // ==============================
 async function createRechargeOrder(openid, event) {
   const amount_zb = Number(event.amount_zb)
   if (!amount_zb || amount_zb < 1) throw new Error('充值金额至少 1 总裁贝')
+  if (!event.loginCode) throw new Error('缺少 loginCode')
+  if (!APP_SECRET) throw new Error('APP_SECRET 未配置，无法生成签名')
+
+  // 1. 换取 session_key（用于用户态签名 signature）
+  const s2s = await httpsGet(
+    `https://api.weixin.qq.com/sns/jscode2session?appid=${APP_ID}&secret=${APP_SECRET}&js_code=${event.loginCode}&grant_type=authorization_code`
+  )
+  if (!s2s.session_key) throw new Error('获取 session_key 失败，请重试')
 
   const platform = String(event.platform || 'android').toLowerCase() === 'ios' ? 'ios' : 'android'
   const iosMarkupEnabled = platform === 'ios' ? await getIosMarkupEnabled() : false
-  // iOS 开启加价时，buyQuantity 上浮 12%，但 DB 仍存原始金额保证到账正确
   const buyQuantity = iosMarkupEnabled ? Math.ceil(amount_zb * 1.12) : amount_zb
   const { pf, pfKey } = buildPfAndKey(platform)
   const env = 0
@@ -120,23 +132,30 @@ async function createRechargeOrder(openid, event) {
     }
   })
 
-  // 服务端签名（保护 appKey 不外泄）
-  const signParams = {
-    attachInfo:   outTradeNo,
-    buyQuantity:  String(buyQuantity),
-    currencyType: 'CNY',
-    env:          String(env),
+  // 2. signData = JSON 序列化的支付参数（与 wx.requestVirtualPayment 传入的一致）
+  const signData = JSON.stringify({
     offerId:      VP_OFFER_ID,
-    scene:        '0'
-  }
-  const signData  = Object.keys(signParams).sort().map(k => `${k}=${signParams[k]}`).join('&')
-  const signature = crypto.createHmac('sha256', VP_APP_KEY).update(signData).digest('hex')
-  const paySig    = pfKey                // MD5(pf + appKey)
-  const mode      = 'short_series_coin' // 虚拟货币充值（另一个有效值：short_series_goods 道具直购）
+    buyQuantity,
+    env,
+    currencyType: 'CNY',
+    mode:         'short_series_coin',
+    attachInfo:   outTradeNo
+  })
+
+  // 3. 用户态签名：HMAC_SHA256(session_key, signData)
+  const signature = crypto.createHmac('sha256', s2s.session_key).update(signData).digest('hex')
+
+  // 4. 支付签名：HMAC_SHA256(appKey, uri + "&" + signData)，uri 固定为 "requestVirtualPayment"
+  const paySig = crypto.createHmac('sha256', VP_APP_KEY).update('requestVirtualPayment' + '&' + signData).digest('hex')
 
   return {
     code: 0,
-    data: { rechargeId, outTradeNo, buyQuantity, pf, pfKey, offerId: VP_OFFER_ID, env, signData, signature, paySig, mode }
+    data: {
+      rechargeId, outTradeNo, buyQuantity,
+      pf, pfKey, offerId: VP_OFFER_ID, env,
+      signData, signature, paySig,
+      mode: 'short_series_coin'
+    }
   }
 }
 
@@ -200,6 +219,42 @@ async function payOrderWithBalance(openid, event) {
   })
 
   return { code: 0, data: { status: 'paid' } }
+}
+
+// ==============================
+//  代币充值推送（xpay_coin_pay_notify）
+//  CoinInfo.Attach 对应我们的 outTradeNo；无需调用 confirmBillDelivery
+// ==============================
+async function handleCoinPayCallback(body) {
+  const openid     = body.OpenId
+  const outTradeNo = (body.CoinInfo && body.CoinInfo.Attach) || body.OutTradeNo
+  const wxOrderId  = body.WeChatPayInfo && body.WeChatPayInfo.TransactionId
+
+  console.log('[payment] coin callback', { openid, outTradeNo, wxOrderId })
+
+  // 幂等：以 outTradeNo 为幂等键，已 approved 的记录跳过
+  const { data: existing } = await db.collection('recharges')
+    .where({ out_trade_no: outTradeNo, status: 'approved' })
+    .limit(1).get()
+  if (existing.length) {
+    return { statusCode: 200, body: JSON.stringify({ ErrCode: 0, ErrMsg: 'success' }) }
+  }
+
+  const { data: pending } = await db.collection('recharges')
+    .where({ out_trade_no: outTradeNo, status: 'pending_payment' })
+    .limit(1).get()
+
+  if (pending.length) {
+    const rec = pending[0]
+    await db.collection('recharges').doc(rec._id).update({
+      data: { status: 'approved', wx_order_id: wxOrderId || '', paid_at: db.serverDate(), updated_at: db.serverDate() }
+    })
+    await db.collection('users').where({ openid }).update({
+      data: { balance_fen: _.inc(rec.amount_fen), updated_at: db.serverDate() }
+    })
+  }
+
+  return { statusCode: 200, body: JSON.stringify({ ErrCode: 0, ErrMsg: 'success' }) }
 }
 
 // ==============================
