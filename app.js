@@ -7,7 +7,8 @@ App({
     role: '',
     roles: [],
     isLoggedIn: false,
-    loginCallbacks: []   // 供页面等待登录完成
+    loginCallbacks: [],
+    showHunterTab: false
   },
 
   onLaunch() {

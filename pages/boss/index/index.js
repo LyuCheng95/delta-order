@@ -32,7 +32,7 @@ Page({
 
   onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 0 })
+      this.getTabBar().setData({ selected: 0, showHunterTab: !!app.globalData.showHunterTab })
     }
     this._load()
   },
@@ -50,8 +50,10 @@ Page({
       const ordersRes = results[1]
       const cfgRes    = results[2]
       const hunters   = results[3] || []
+      const showHunterTab = Array.isArray(hunters) && hunters.length > 0
+      app.globalData.showHunterTab = showHunterTab
       if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-        this.getTabBar().setData({ showHunterTab: Array.isArray(hunters) && hunters.length > 0 })
+        this.getTabBar().setData({ showHunterTab })
       }
 
       const catList = svcData.cats || []
