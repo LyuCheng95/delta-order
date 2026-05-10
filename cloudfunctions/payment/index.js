@@ -132,7 +132,7 @@ async function createRechargeOrder(openid, event) {
   const signData  = Object.keys(signParams).sort().map(k => `${k}=${signParams[k]}`).join('&')
   const signature = crypto.createHmac('sha256', VP_APP_KEY).update(signData).digest('hex')
   const paySig    = pfKey   // MD5(pf + appKey)
-  const mode      = ''
+  const mode      = '1'
 
   return {
     code: 0,
