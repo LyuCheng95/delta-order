@@ -104,13 +104,13 @@ async function createRechargeOrder(openid, event) {
   const amount_zb = Number(event.amount_zb)
   if (!amount_zb || amount_zb < 1) throw new Error('充值金额至少 1 总裁贝')
   if (!event.loginCode) throw new Error('缺少 loginCode')
-  if (!APP_SECRET) throw new Error('APP_SECRET 未配置，无法生成签名')
 
   // 1. 换取 session_key（用于用户态签名 signature）
-  const s2s = await httpsGet(
-    `https://api.weixin.qq.com/sns/jscode2session?appid=${APP_ID}&secret=${APP_SECRET}&js_code=${event.loginCode}&grant_type=authorization_code`
-  )
-  if (!s2s.session_key) throw new Error('获取 session_key 失败，请重试')
+  const s2s = await cloud.openapi.auth.code2Session({
+    jsCode:    event.loginCode,
+    grantType: 'authorization_code'
+  })
+  if (!s2s.sessionKey) throw new Error('获取 session_key 失败，请重试')
 
   const platform = String(event.platform || 'android').toLowerCase() === 'ios' ? 'ios' : 'android'
   const iosMarkupEnabled = platform === 'ios' ? await getIosMarkupEnabled() : false
@@ -145,7 +145,7 @@ async function createRechargeOrder(openid, event) {
   })
 
   // 3. 用户态签名：HMAC_SHA256(session_key, signData)
-  const signature = crypto.createHmac('sha256', s2s.session_key).update(signData).digest('hex')
+  const signature = crypto.createHmac('sha256', s2s.sessionKey).update(signData).digest('hex')
 
   // 4. 支付签名：HMAC_SHA256(appKey, uri + "&" + signData)，uri 固定为 "requestVirtualPayment"
   const paySig = crypto.createHmac('sha256', VP_APP_KEY).update('requestVirtualPayment' + '&' + signData).digest('hex')

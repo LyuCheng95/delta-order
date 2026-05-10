@@ -1,6 +1,8 @@
 {
   "permissions": {
-    "openapi": []
+    "openapi": [
+      "auth.code2Session"
+    ]
   },
   "envId": "cloud1-7gpc53pt3feac82a"
 }
