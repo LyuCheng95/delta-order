@@ -808,8 +808,7 @@ Page({
   async _loadSettings() {
     try {
       const res = await config.get('cs_qr')
-      const fileID = (res && res.value) || ''
-      this.setData({ csQrUrl: await resolveFileUrl(fileID) })
+      this.setData({ csQrUrl: (res && res.value) || '' })
     } catch (_) {}
   },
 
@@ -828,9 +827,12 @@ Page({
       const ext = (file.tempFilePath.split('.').pop() || 'jpg').replace(/[^a-z0-9]/gi, '') || 'jpg'
       const cloudPath = `cs_qr/${Date.now()}.${ext}`
       const up = await wx.cloud.uploadFile({ cloudPath, filePath: file.tempFilePath })
-      await config.set('cs_qr', up.fileID)
+      const tempRes = await wx.cloud.getTempFileURL({ fileList: [up.fileID] })
+      const tempUrl = tempRes.fileList && tempRes.fileList[0] && tempRes.fileList[0].tempFileURL
+      if (!tempUrl) throw new Error('获取图片链接失败')
+      await config.set('cs_qr', tempUrl)
       wx.hideLoading()
-      this.setData({ csQrUrl: await resolveFileUrl(up.fileID) })
+      this.setData({ csQrUrl: tempUrl })
       wx.showToast({ title: '二维码已更新', icon: 'success' })
     } catch (e) {
       wx.hideLoading()

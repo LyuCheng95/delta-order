@@ -75,7 +75,7 @@ Page({
         return Object.assign({}, o, { totalYuan: fen2zb(o.total_amount), timeStr: fmtTime(o.created_at) })
       })
 
-      const csQrUrl = await resolveFileUrl((cfgRes && cfgRes.value) || '')
+      const csQrUrl = (cfgRes && cfgRes.value) || ''
       this.setData({ groups: groups, activeOrders: active, activeCatIndex: -1, scrollInto: '', csQrUrl: csQrUrl })
     } finally {
       this.setData({ loading: false })
