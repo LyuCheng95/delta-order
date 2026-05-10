@@ -11,6 +11,7 @@ Page({
     logs: [],
     s_seedHunters:       idle(),
     s_clearWallet:       idle(),
+    s_setCoHunter:       idle(),
     s_deleteHunters:     idle(),
     s_grantRoles:        idle(),
     s_injectBalance:     idle(),
@@ -252,6 +253,23 @@ Page({
         await this._run('clearWallet', '清零所有流水', async () => {
           const d = await dev.clearAllWallet()
           return `充值 ${d.recharges} 条，提现 ${d.withdrawals} 条，用户 ${d.usersReset} 个余额归零`
+        })
+      }
+    })
+  },
+
+  async runSetAllCoHunter(e) {
+    const value = e.currentTarget.dataset.value
+    const label = value ? '双打' : '单打'
+    wx.showModal({
+      title: `全部设为${label}`,
+      content: `确定将所有服务 needs_co_hunter 设为 ${value ? 'true' : 'false'}？`,
+      success: async r => {
+        if (!r.confirm) return
+        await this._run('setCoHunter', `批量设为${label}`, async () => {
+          const { service } = require('../../../utils/cloud')
+          const d = await service.setAllCoHunter({ value })
+          return `已更新 ${d.updated} 个服务`
         })
       }
     })

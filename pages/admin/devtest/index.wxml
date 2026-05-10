@@ -299,6 +299,19 @@
   </view>
 
 
+  <!-- ══ 批量设置双打 ══ -->
+  <view class="dt-section">
+    <text class="dt-section-title">批量设置服务双打模式</text>
+    <text class="dt-section-sub" style="margin-bottom:16rpx">将所有服务的 needs_co_hunter 统一设置</text>
+    <view class="dt-step-foot" style="gap:16rpx">
+      <button class="dt-btn" loading="{{s_setCoHunter.status==='running'}}"
+        catchtap="runSetAllCoHunter" data-value="{{true}}">全部设为双打</button>
+      <button class="dt-btn dt-btn--danger" loading="{{s_setCoHunter.status==='running'}}"
+        catchtap="runSetAllCoHunter" data-value="{{false}}">全部设为单打</button>
+    </view>
+    <view class="dt-result {{s_setCoHunter.status}}" wx:if="{{s_setCoHunter.result}}">{{s_setCoHunter.result}}</view>
+  </view>
+
   <!-- ══ 清零所有流水 ══ -->
   <view class="dt-section">
     <text class="dt-section-title">清零所有流水数据</text>

@@ -135,7 +135,7 @@ Page({
       { k: 'services',    l: '服务' },
       { k: 'hunters',     l: '陪玩师' },
     ]
-    if (!iosMarkupEnabled) nav.push({ k: 'proxy_recharge', l: '代充' })
+    if (!iosMarkupEnabled) nav.push({ k: 'proxy_recharge', l: '入账' })
     nav.push({ k: 'settings', l: '⚙️设置' })
     return nav
   },
@@ -804,6 +804,10 @@ Page({
     } catch (_) {}
   },
 
+  goDevtest() {
+    wx.navigateTo({ url: '/pages/admin/devtest/index' })
+  },
+
   async onUploadCsQr() {
     if (this.data.csQrUploading) return
     try {
@@ -879,14 +883,14 @@ Page({
     if (!amt || amt < 1) { wx.showToast({ title: '充值金额至少 1 总裁贝', icon: 'none' }); return }
     if (proxying) return
     wx.showModal({
-      title: '确认代充',
+      title: '确认入账',
       content: `为「${proxySelected.nickname}」充值 ${amt} 总裁贝？`,
       success: async r => {
         if (!r.confirm) return
         this.setData({ proxying: true })
         try {
           await wallet.adminCreditUser({ targetOpenid: proxySelected.openid, amount_zb: amt })
-          wx.showToast({ title: '代充成功', icon: 'success' })
+          wx.showToast({ title: '入账成功', icon: 'success' })
           this.setData({ proxyNickname: '', proxyResults: [], proxySelected: null, proxyAmount: '' })
         } catch (_) {} finally {
           this.setData({ proxying: false })

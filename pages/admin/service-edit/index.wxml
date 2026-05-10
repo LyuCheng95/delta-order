@@ -56,6 +56,16 @@
       </view>
       <switch checked="{{is_active}}" bindchange="onActiveChange" color="#00E5FF" />
     </view>
+
+    <view class="se-divider"/>
+
+    <view class="se-field se-field--switch">
+      <view>
+        <text class="se-label" style="margin-bottom:4rpx">双打单</text>
+        <text class="se-sublabel">开启后下单自动标记为双打，接单时需选搭档</text>
+      </view>
+      <switch checked="{{needs_co_hunter}}" bindchange="onCoHunterChange" color="#00E5FF" />
+    </view>
   </view>
 
   <!-- ══ 下单表单字段 ══ -->
@@ -113,10 +123,10 @@
 
   <!-- ══ 操作按钮 ══ -->
   <view class="se-actions">
-    <button class="btn btn-primary"
+    <button wx:if="{{id}}" class="btn btn-danger se-actions-del" bindtap="onDelete">删除</button>
+    <button class="btn btn-primary se-actions-save"
       loading="{{saving}}" disabled="{{saving || !catLabels.length}}"
       bindtap="onSave">保存服务</button>
-    <button wx:if="{{id}}" class="btn btn-danger" style="margin-top:20rpx" bindtap="onDelete">删除服务</button>
   </view>
 
 </scroll-view>

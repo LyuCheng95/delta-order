@@ -16,9 +16,9 @@
           </view>
           <text class="t3 xs" style="display:block;margin-bottom:12rpx">{{item.timeStr}}</text>
           <view class="wechat-row" style="margin-bottom:16rpx">
-            <text class="t2 sm">打款微信：</text>
-            <text class="bold tc flex1">{{item.wechat_id}}</text>
-            <text class="t3 sm" style="color:var(--primary)" catchtap="onCopy" data-v="{{item.wechat_id}}">复制</text>
+            <text class="t2 sm">收款银行卡：</text>
+            <text class="bold tc flex1">{{item.bank_card || '未填写'}}</text>
+            <text wx:if="{{item.bank_card}}" class="t3 sm" style="color:var(--primary)" catchtap="onCopy" data-v="{{item.bank_card}}">复制</text>
           </view>
           <view class="row" style="gap:12rpx">
             <button class="btn btn-ghost btn-sm flex1" catchtap="onReject" data-id="{{item._id}}">拒绝</button>

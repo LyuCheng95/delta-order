@@ -87,7 +87,7 @@ Page({
     if (this.data.platform === 'ios' && !this.data.iosMarkupEnabled) {
       wx.showModal({
         title: 'iOS 暂不支持直接充值',
-        content: '请联系客服，由客服为您代充总裁贝',
+        content: '请联系客服为您处理充值',
         confirmText: '联系客服',
         cancelText: '取消',
         success: r => { if (r.confirm) openEnterpriseCustomerService() }
@@ -99,29 +99,26 @@ Page({
     this.setData({ paying: true })
 
     try {
-      // 获取 loginCode（服务端用于换取 session_key 以计算用户态签名 signature）
-      const { code: loginCode } = await wx.login()
+      console.log('[recharge] step1: calling wx.login')
+      const loginRes = await wx.login()
+      const loginCode = loginRes && loginRes.code
+      console.log('[recharge] step2: loginCode=', loginCode ? loginCode.slice(0, 6) + '...' : 'EMPTY')
 
-      // Create recharge order: server generates all signature fields and adjusts buyQuantity for iOS markup
-      const { rechargeId, outTradeNo, buyQuantity, pf, pfKey, offerId, env, signData, signature, paySig, mode } =
-        await payment.createRechargeOrder({ amount_zb: amt, platform: this.data.platform || 'android', loginCode })
+      console.log('[recharge] step3: calling createRechargeOrder')
+      const orderRes = await payment.createRechargeOrder({ amount_zb: amt, platform: this.data.platform || 'android', loginCode })
+      console.log('[recharge] step4: orderRes=', JSON.stringify(orderRes))
+
+      const { rechargeId, signData, signature, paySig, mode } = orderRes || {}
+      console.log('[recharge] step5: signData=', signData, 'signature=', signature ? signature.slice(0,8)+'...' : 'MISSING', 'paySig=', paySig ? paySig.slice(0,8)+'...' : 'MISSING', 'mode=', mode)
 
       await new Promise((resolve, reject) => {
         wx.requestVirtualPayment({
-          offerId,
-          buyQuantity,
-          env,
-          currencyType: 'CNY',
-          scene:        0,
-          pf,
-          pfKey,
-          attachInfo:   outTradeNo,
           signData,
           signature,
           paySig,
           mode,
-          success:      resolve,
-          fail:         reject
+          success: resolve,
+          fail:    reject
         })
       })
 

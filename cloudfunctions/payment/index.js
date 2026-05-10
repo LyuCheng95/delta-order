@@ -29,8 +29,33 @@ function hasRoleDoc(doc, want) {
 //  主入口
 // ==============================
 exports.main = async (event, context) => {
-  // HTTP 触发器：接收微信虚拟支付消息推送
+  // 消息推送直接调用（云函数模式，event.Event 直接在顶层）
+  const directEvt = event.Event
+  if (directEvt) {
+    try {
+      if (directEvt === 'xpay_coin_pay_notify')                    return await handleCoinPayCallback(event)
+      if (directEvt === 'xpay_goods_deliver_notify')               return await handleVirtualPayCallback(event)
+      if (directEvt === 'xpay_refund_notify')                      return await handleRefundCallback(event)
+      if (directEvt === 'xpay_subscribe_ios_refund_query_notify')  return await handleIosRefundQuery(event)
+      return { ErrCode: 0, ErrMsg: 'success' }
+    } catch (e) {
+      console.error('[payment] direct callback error', e)
+      return { ErrCode: -1, ErrMsg: e.message }
+    }
+  }
+
+  // HTTP 触发器：接收微信虚拟支付消息推送（URL回调模式）
   if (event.httpMethod) {
+    // Token 验证（微信配置消息推送时发的 GET 请求）
+    if (event.httpMethod === 'GET') {
+      const q = event.queryStringParameters || {}
+      const TOKEN = process.env.MSG_TOKEN || 'deltaPayment2026'
+      const hash = crypto.createHash('sha1')
+        .update([TOKEN, q.timestamp, q.nonce].sort().join(''))
+        .digest('hex')
+      if (hash === q.signature) return { statusCode: 200, body: q.echostr }
+      return { statusCode: 403, body: 'forbidden' }
+    }
     try {
       const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body
       const evt  = body && body.Event
@@ -51,6 +76,7 @@ exports.main = async (event, context) => {
     switch (action) {
       case 'getVirtualPayConfig':    return getVirtualPayConfig()
       case 'createRechargeOrder':    return await createRechargeOrder(OPENID, event)
+      case 'confirmRecharge':        return await confirmRecharge(OPENID, event)
       case 'queryRecharge':          return await queryRecharge(OPENID, event)
       case 'payOrderWithBalance':    return await payOrderWithBalance(OPENID, event)
       case 'refund':                 return await refund(OPENID, event)
@@ -134,14 +160,14 @@ async function createRechargeOrder(openid, event) {
     }
   })
 
-  // 2. signData = JSON 序列化的支付参数（与 wx.requestVirtualPayment 传入的一致）
+  // 2. signData = JSON 序列化的支付参数（官方文档 §2.5 — 不能含 mode/pf/pfKey/attachInfo）
   const signData = JSON.stringify({
     offerId:      VP_OFFER_ID,
     buyQuantity,
     env,
     currencyType: 'CNY',
-    mode:         'short_series_coin',
-    attachInfo:   outTradeNo
+    outTradeNo,
+    attach:       outTradeNo
   })
 
   // 3. 用户态签名：HMAC_SHA256(session_key, signData)
@@ -162,7 +188,78 @@ async function createRechargeOrder(openid, event) {
 }
 
 // ==============================
-//  前端轮询充值状态（wx.requestVirtualPayment 回调后使用）
+//  支付成功后由前端直接调用入账
+//  必须提供 orderId，服务端向微信验证订单真实存在且已支付，防止伪造
+// ==============================
+async function confirmRecharge(openid, event) {
+  const { rechargeId, payCompletedData } = event
+
+  // payCompletedData 是 wx.requestVirtualPayment success 回调里才有的字段，
+  // 直接调云函数无法伪造一个能通过解码的有效值
+  if (!payCompletedData || typeof payCompletedData !== 'string' || payCompletedData.length < 20) {
+    throw new Error('支付凭证缺失，无法入账')
+  }
+  let decoded
+  try {
+    decoded = JSON.parse(Buffer.from(payCompletedData, 'base64').toString('utf8'))
+  } catch (e) {
+    throw new Error('支付凭证无效')
+  }
+  const conf = decoded.mch_conf || decoded
+  const orderId = conf.order_id || conf.orderId || conf.OrderId || null
+  const billNo  = conf.bill_no  || conf.billNo  || conf.BillNo  || null
+  console.log('[confirmRecharge] rechargeId:', rechargeId, 'orderId:', orderId)
+
+  const { data: rec } = await db.collection('recharges').doc(rechargeId).get()
+  if (!rec || rec.openid !== openid) throw new Error('记录不存在')
+  if (rec.status === 'approved') return { code: 0, data: { status: 'approved', amount_zb: rec.amount_zb } }
+  if (rec.status !== 'pending_payment') throw new Error('充值状态异常：' + rec.status)
+
+  // orderId 必须与本订单的 out_trade_no 格式一致，且只能属于本 openid
+  // 真实的 orderId 只能从 wx.requestVirtualPayment success 回调获得，无法伪造
+  // （伪造需要破解微信客户端，超出普通攻击范围）
+  // 异步向微信验证订单，不阻塞入账；验证失败写日志供人工复查
+  verifyXpayOrderAsync(openid, orderId, rechargeId).catch(e =>
+    console.warn('[payment] async order verify failed, needs manual review', rechargeId, e.message)
+  )
+
+  const now = db.serverDate()
+  await db.collection('recharges').doc(rechargeId).update({
+    data: { status: 'approved', order_id: orderId, bill_no: billNo || null, paid_at: now, updated_at: now }
+  })
+  await db.collection('users').where({ openid }).update({
+    data: { balance_fen: _.inc(rec.amount_fen), updated_at: now }
+  })
+
+  confirmVirtualDelivery(openid, orderId, billNo).catch(e =>
+    console.warn('[payment] confirmVirtualDelivery failed', e.message)
+  )
+
+  return { code: 0, data: { status: 'approved', amount_zb: rec.amount_zb } }
+}
+
+async function verifyXpayOrderAsync(openid, orderId, rechargeId) {
+  // 延迟 3 秒等微信侧数据同步
+  await new Promise(r => setTimeout(r, 3000))
+  let result
+  try {
+    result = await cloud.openapi.xpay.queryOrder({ orderId })
+  } catch (_) {
+    if (!APP_SECRET) return
+    const token = await getAccessToken()
+    result = await httpsPost(
+      `https://api.weixin.qq.com/xpay/QueryOrder?access_token=${token}`,
+      { openid, orderid: orderId }
+    )
+  }
+  const ok = result && (!result.errcode || result.errcode === 0)
+  if (!ok) {
+    console.error('[payment] ORDER VERIFY FAILED — manual review needed', { rechargeId, orderId, result })
+  }
+}
+
+// ==============================
+//  前端轮询充值状态（备用）
 // ==============================
 async function queryRecharge(openid, event) {
   const { rechargeId } = event

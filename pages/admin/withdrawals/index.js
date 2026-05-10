@@ -44,7 +44,7 @@ Page({
     const withdrawId = e.currentTarget.dataset.id
     wx.showModal({
       title: '确认已打款',
-      content: '确认已向陪玩师微信号完成转账？',
+      content: '确认已向陪玩师银行卡完成转账？',
       success: async r => {
         if (!r.confirm) return
         try {

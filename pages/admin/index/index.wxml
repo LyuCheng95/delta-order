@@ -177,7 +177,7 @@
 
   <!-- 服务管理已跳转至独立页面 pages/admin/services/index -->
 
-  <!-- —— 代充 —— -->
+  <!-- —— 手动入账 —— -->
   <view wx:elif="{{adminTab==='proxy_recharge'}}" class="admin-flex-col">
     <scroll-view scroll-y class="admin-list-scroll">
       <view style="padding:24rpx">
@@ -204,12 +204,12 @@
         </view>
 
         <view wx:if="{{proxySelected}}" class="card">
-          <text class="bold sm" style="display:block;margin-bottom:16rpx">为「{{proxySelected.nickname}}」代充</text>
+          <text class="bold sm" style="display:block;margin-bottom:16rpx">为「{{proxySelected.nickname}}」手动入账</text>
           <view style="display:flex;align-items:center;gap:12rpx;margin-bottom:24rpx">
             <input class="input-field" style="flex:1" type="digit" placeholder="充值金额（总裁贝）" value="{{proxyAmount}}" bindinput="onProxyAmountInput"/>
             <text class="t2 sm">总裁贝</text>
           </view>
-          <button class="btn btn-primary" style="width:100%" loading="{{proxying}}" disabled="{{proxying}}" bindtap="onProxyConfirm">确认代充</button>
+          <button class="btn btn-primary" style="width:100%" loading="{{proxying}}" disabled="{{proxying}}" bindtap="onProxyConfirm">确认入账</button>
         </view>
       </view>
     </scroll-view>
@@ -223,7 +223,7 @@
           <view class="row-between" style="align-items:center">
             <view style="flex:1;padding-right:24rpx">
               <text class="bold sm" style="display:block">iOS 充值 +12%</text>
-              <text class="t2 xs" style="display:block;margin-top:8rpx;color:var(--text-3)">开启后 iOS 用户充值价格上浮 12%（覆盖 Apple 抽成）；关闭后显示「代充」入口</text>
+              <text class="t2 xs" style="display:block;margin-top:8rpx;color:var(--text-3)">开启后 iOS 用户充值价格上浮 12%（覆盖 Apple 抽成）；关闭后显示手动入账入口</text>
             </view>
             <switch checked="{{iosMarkupEnabled}}" bindchange="onToggleIosMarkup" color="var(--primary)"/>
           </view>
@@ -240,6 +240,11 @@
           <button class="btn btn-primary" style="width:100%" loading="{{csQrUploading}}" disabled="{{csQrUploading}}" bindtap="onUploadCsQr">
             {{csQrUrl ? '更换二维码' : '上传二维码'}}
           </button>
+        </view>
+        <view class="card" style="margin-bottom:24rpx">
+          <text class="bold sm" style="display:block;margin-bottom:8rpx">开发工具</text>
+          <text class="t2 xs" style="display:block;margin-bottom:20rpx;color:var(--text-3)">批量操作、测试数据等</text>
+          <button class="btn btn-ghost" style="width:100%" bindtap="goDevtest">进入开发工具</button>
         </view>
       </view>
     </scroll-view>

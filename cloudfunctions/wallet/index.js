@@ -177,12 +177,14 @@ async function getSummary(openid) {
 
 async function requestWithdraw(openid, event) {
   await requireHunter(openid)
-  let { amount_fen, wechat_id } = event
+  let { amount_fen } = event
   amount_fen = Number(amount_fen)
   if (!amount_fen || amount_fen < 100) throw new Error('提现金额至少 1 元')
 
-  wechat_id = String(wechat_id || '').trim()
-  if (wechat_id.length < 2) throw new Error('请填写收款微信号')
+  const { data: users } = await db.collection('users').where({ openid }).limit(1).get()
+  const user = users[0]
+  const bank_card = user && user.hunter_info && user.hunter_info.bank_card
+  if (!bank_card) throw new Error('请先填写收款银行卡号')
 
   const w = await computeWallet(openid)
   if (amount_fen > w.available_fen) throw new Error('可提现余额不足')
@@ -192,7 +194,7 @@ async function requestWithdraw(openid, event) {
     data: {
       openid,
       amount_fen,
-      wechat_id,
+      bank_card,
       status: 'pending',
       created_at: now,
       updated_at: now
@@ -220,12 +222,17 @@ async function listPendingAdmin(openid) {
     .get()
 
   const openids = [...new Set(data.map(w => w.openid))]
-  const nickMap = {}
+  const userMap = {}
   for (const oid of openids) {
     const { data: users } = await db.collection('users').where({ openid: oid }).limit(1).get()
-    nickMap[oid] = users[0] ? (users[0].nickname || oid.slice(-6)) : oid.slice(-6)
+    const u = users[0] || {}
+    userMap[oid] = { nickname: u.nickname || oid.slice(-6), bank_card: (u.hunter_info && u.hunter_info.bank_card) || '' }
   }
-  const list = data.map(w => ({ ...w, hunter_nickname: nickMap[w.openid] || '' }))
+  const list = data.map(w => ({
+    ...w,
+    hunter_nickname: (userMap[w.openid] || {}).nickname || '',
+    bank_card: w.bank_card || (userMap[w.openid] || {}).bank_card || ''
+  }))
   return { code: 0, data: list }
 }
 
@@ -237,12 +244,17 @@ async function listAllAdmin(openid) {
     .get()
 
   const openids = [...new Set(data.map(w => w.openid))]
-  const nickMap = {}
+  const userMap = {}
   for (const oid of openids) {
     const { data: users } = await db.collection('users').where({ openid: oid }).limit(1).get()
-    nickMap[oid] = users[0] ? (users[0].nickname || oid.slice(-6)) : oid.slice(-6)
+    const u = users[0] || {}
+    userMap[oid] = { nickname: u.nickname || oid.slice(-6), bank_card: (u.hunter_info && u.hunter_info.bank_card) || '' }
   }
-  const list = data.map(w => ({ ...w, hunter_nickname: nickMap[w.openid] || '' }))
+  const list = data.map(w => ({
+    ...w,
+    hunter_nickname: (userMap[w.openid] || {}).nickname || '',
+    bank_card: w.bank_card || (userMap[w.openid] || {}).bank_card || ''
+  }))
   return { code: 0, data: list }
 }
 
@@ -475,6 +487,7 @@ exports.main = async (event, context) => {
       case 'listRechargesAdmin':  return await listRechargesAdmin(OPENID)
       case 'reviewRecharge':      return await reviewRecharge(OPENID, event)
       case 'batchReviewRecharge': return await batchReviewRecharge(OPENID, event)
+      case 'adminCreditUser':     return await adminCreditUser(OPENID, event)
       case 'devDirectCredit':     return await devDirectCredit(OPENID, event)
       case 'devDeleteRecord':     return await devDeleteRecord(OPENID, event)
       case 'devClearAll':         return await devClearAll(event)
@@ -484,6 +497,41 @@ exports.main = async (event, context) => {
     console.error('[wallet]', action, e)
     return { code: -1, msg: e.message || '服务器错误' }
   }
+}
+
+// 管理员代充：搜索用户 → 直接入账 + 生成充值记录
+async function adminCreditUser(openid, event) {
+  await requireAdmin(openid)
+  const amount_zb = Number(event.amount_zb)
+  const amount_fen = Math.floor(amount_zb * 100)
+  if (!amount_fen || amount_fen < 100) throw new Error('充值金额至少 1 总裁贝')
+
+  const targetOpenid = String(event.targetOpenid || '').trim()
+  if (!targetOpenid) throw new Error('缺少目标用户')
+
+  const { data: users } = await db.collection('users').where({ openid: targetOpenid }).limit(1).get()
+  if (!users.length) throw new Error('用户不存在')
+
+  const now = db.serverDate()
+  await db.collection('users').where({ openid: targetOpenid }).update({
+    data: { balance_fen: _.inc(amount_fen), updated_at: now }
+  })
+  await ensureRechargesCollection()
+  await db.collection('recharges').add({
+    data: {
+      openid:      targetOpenid,
+      amount_fen,
+      amount_zb,
+      status:      'approved',
+      source:      'admin_proxy',
+      admin_openid: openid,
+      note:        String(event.note || '客服代充').slice(0, 100),
+      paid_at:     now,
+      created_at:  now,
+      updated_at:  now
+    }
+  })
+  return { code: 0, data: { amount_fen, nickname: users[0].nickname || '' } }
 }
 
 // 开发测试：直接写入余额（不走充值审批流程）

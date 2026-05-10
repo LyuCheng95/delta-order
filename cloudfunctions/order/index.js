@@ -93,8 +93,7 @@ async function getUser(openid) {
 // payment_method='wxpay'：不扣余额，状态 pending_payment，走微信支付
 async function createOrder(openid, event) {
   const { service_id, quantity, form_data, remark, payment_method,
-          preferred_hunter_openid, preferred_co_hunter_openid, preferred_time,
-          needs_co_hunter } = event
+          preferred_hunter_openid, preferred_co_hunter_openid, preferred_time } = event
   const useWxpay = payment_method === 'wxpay'
 
   const svcRes = await db.collection('services').doc(service_id).get()
@@ -140,7 +139,7 @@ async function createOrder(openid, event) {
     preferred_hunter_openid:    preferred_hunter_openid    || '',
     preferred_co_hunter_openid: preferred_co_hunter_openid || '',
     preferred_time:             preferred_time             || '',
-    needs_co_hunter:            !!needs_co_hunter,
+    needs_co_hunter:            !!svc.needs_co_hunter,
     service_id,
     service_snapshot: {
       category_name: catRes.data?.name || '',

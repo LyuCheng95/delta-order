@@ -47,6 +47,7 @@ exports.main = async (event, context) => {
       case 'listAllForBoss':      return await listAllForBoss()
       case 'getConfig':           return await getConfig(event)
       case 'setConfig':           return await setConfig(OPENID, event)
+      case 'setAllCoHunter':      return await setAllCoHunter(OPENID, event)
       default: return { code: -1, msg: '未知操作' }
     }
   } catch(e) {
@@ -146,7 +147,7 @@ async function upsertCategory(openid, event) {
 // 新增/更新服务
 async function upsertService(openid, event) {
   await requireAdmin(openid)
-  const { _id, category_id, name, description, price, price_unit, form_fields, sort_order, is_active, price_modifiers } = event
+  const { _id, category_id, name, description, price, price_unit, form_fields, sort_order, is_active, price_modifiers, needs_co_hunter } = event
 
   if (_id) {
     const { data: existing } = await db.collection('services').doc(_id).get()
@@ -165,6 +166,7 @@ async function upsertService(openid, event) {
       form_fields: form_fields !== undefined ? form_fields : (existing.form_fields || []),
       sort_order: sort_order !== undefined ? (Number(sort_order) || 99) : (existing.sort_order || 99),
       is_active: is_active !== undefined ? (is_active !== false) : (existing.is_active !== false),
+      needs_co_hunter: needs_co_hunter !== undefined ? !!needs_co_hunter : (existing.needs_co_hunter || false),
       updated_at: db.serverDate()
     }
     if (price_modifiers !== undefined) payload.price_modifiers = price_modifiers
@@ -185,6 +187,7 @@ async function upsertService(openid, event) {
     form_fields: Array.isArray(form_fields) ? form_fields : [],
     sort_order: Number(sort_order) || 99,
     is_active: is_active !== false,
+    needs_co_hunter: !!needs_co_hunter,
     created_at: db.serverDate(),
     updated_at: db.serverDate()
   }
@@ -286,6 +289,20 @@ async function getConfig(event) {
   await ensureAppConfigCol()
   const { data } = await db.collection('app_config').where({ key }).limit(1).get()
   return { code: 0, data: data[0] || null }
+}
+
+async function setAllCoHunter(openid, event) {
+  await requireAdmin(openid)
+  const value = event.value !== false
+  const { data: svcs } = await db.collection('services').limit(100).get()
+  let updated = 0
+  for (const svc of svcs) {
+    await db.collection('services').doc(svc._id).update({
+      data: { needs_co_hunter: value, updated_at: db.serverDate() }
+    })
+    updated++
+  }
+  return { code: 0, data: { updated } }
 }
 
 async function setConfig(openid, event) {

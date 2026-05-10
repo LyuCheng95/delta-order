@@ -127,7 +127,8 @@ const service = {
   deleteSvc: id => call('service', 'deleteService', { serviceId: id }),
   toggleActive: p => call('service', 'toggleServiceActive', p),
   updateCatOrder: p => call('service', 'updateCatOrder', p),
-  updateSvcOrder: p => call('service', 'updateSvcOrder', p)
+  updateSvcOrder:   p => call('service', 'updateSvcOrder', p),
+  setAllCoHunter:   p => call('service', 'setAllCoHunter', p)
 }
 const config = {
   get: key => call('service', 'getConfig', { key }),
@@ -138,7 +139,9 @@ const payment = {
   getVirtualPayConfig:  ()  => call('payment', 'getVirtualPayConfig', {}),
   // 充值：创建待支付记录 → 拿 outTradeNo 传给 wx.requestVirtualPayment attachInfo
   createRechargeOrder:  p   => call('payment', 'createRechargeOrder', p),
-  // 充值：查询到账状态（轮询用）
+  // 充值：支付成功后直接入账（前端调用）
+  confirmRecharge:      p   => call('payment', 'confirmRecharge', p),
+  // 充值：查询到账状态（备用）
   queryRecharge:        p   => call('payment', 'queryRecharge', p),
   // 订单支付：用总裁贝余额扣款
   payOrderWithBalance:  p   => call('payment', 'payOrderWithBalance', p),

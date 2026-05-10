@@ -96,57 +96,67 @@
       <text class="t2 sm" style="padding:8rpx" bindtap="closeTakeSheet">✕</text>
     </view>
 
-    <!-- 搜索搭档 -->
-    <text class="t2 sm" style="display:block;margin-bottom:12rpx">选择搭档（可选）</text>
-    <input class="input-field" style="margin-bottom:16rpx" placeholder="搜索陪玩师昵称 / 微信号"
-      value="{{keyword}}" bindinput="onKeywordInput"/>
+    <!-- 双打单：搜索搭档 -->
+    <block wx:if="{{order.needs_co_hunter}}">
+      <text class="t2 sm" style="display:block;margin-bottom:12rpx">选择搭档（可选）</text>
+      <input class="input-field" style="margin-bottom:16rpx" placeholder="搜索陪玩师昵称 / 微信号"
+        value="{{keyword}}" bindinput="onKeywordInput"/>
 
-    <!-- 陪玩师列表 -->
-    <scroll-view scroll-y style="max-height:320rpx;margin-bottom:16rpx">
-      <view wx:if="{{!filteredHunters.length}}" class="t3 sm" style="padding:20rpx 0;text-align:center;color:var(--text-3)">暂无其他在职陪玩师</view>
-      <view wx:for="{{filteredHunters}}" wx:key="openid"
-        class="partner-row {{selectedPartner&&selectedPartner.openid===item.openid?'partner-selected':''}}"
-        bindtap="selectPartner" data-hunter="{{item}}">
-        <image style="width:56rpx;height:56rpx;border-radius:50%;flex-shrink:0" src="{{item.avatar_url}}"/>
-        <view style="flex:1;min-width:0;margin-left:16rpx">
-          <text class="bold sm" style="display:block">{{item.nickname}}</text>
-          <text wx:if="{{item.contact}}" class="t3 xs">{{item.contact}}</text>
+      <!-- 陪玩师列表 -->
+      <scroll-view scroll-y style="max-height:320rpx;margin-bottom:16rpx">
+        <view wx:if="{{!filteredHunters.length}}" class="t3 sm" style="padding:20rpx 0;text-align:center;color:var(--text-3)">暂无其他在职陪玩师</view>
+        <view wx:for="{{filteredHunters}}" wx:key="openid"
+          class="partner-row {{selectedPartner&&selectedPartner.openid===item.openid?'partner-selected':''}}"
+          bindtap="selectPartner" data-hunter="{{item}}">
+          <image style="width:56rpx;height:56rpx;border-radius:50%;flex-shrink:0" src="{{item.avatar_url}}"/>
+          <view style="flex:1;min-width:0;margin-left:16rpx">
+            <text class="bold sm" style="display:block">{{item.nickname}}</text>
+            <text wx:if="{{item.contact}}" class="t3 xs">{{item.contact}}</text>
+          </view>
+          <text wx:if="{{selectedPartner&&selectedPartner.openid===item.openid}}" style="color:var(--primary);font-size:36rpx">✓</text>
         </view>
-        <text wx:if="{{selectedPartner&&selectedPartner.openid===item.openid}}" style="color:var(--primary);font-size:36rpx">✓</text>
-      </view>
-    </scroll-view>
+      </scroll-view>
 
-    <!-- 分成比例（仅选了搭档时显示） -->
-    <block wx:if="{{selectedPartner}}">
-      <view class="row-between" style="margin-bottom:20rpx;align-items:center">
-        <text class="t2 sm">搭档分成比例（%）</text>
-        <view style="display:flex;align-items:center;gap:12rpx">
-          <text class="t2 sm">你 {{100-partnerSplit}}%</text>
-          <text class="t3 xs">·</text>
-          <text class="t2 sm">{{selectedPartner.nickname}} </text>
-          <input class="input-field" style="width:100rpx;text-align:center;padding:8rpx 12rpx"
-            type="number" value="{{partnerSplit}}" bindinput="onSplitInput" maxlength="3"/>
-          <text class="t2 sm">%</text>
+      <!-- 分成比例（仅选了搭档时显示） -->
+      <block wx:if="{{selectedPartner}}">
+        <view class="row-between" style="margin-bottom:20rpx;align-items:center">
+          <text class="t2 sm">搭档分成比例（%）</text>
+          <view style="display:flex;align-items:center;gap:12rpx">
+            <text class="t2 sm">你 {{100-partnerSplit}}%</text>
+            <text class="t3 xs">·</text>
+            <text class="t2 sm">{{selectedPartner.nickname}} </text>
+            <input class="input-field" style="width:100rpx;text-align:center;padding:8rpx 12rpx"
+              type="number" value="{{partnerSplit}}" bindinput="onSplitInput" maxlength="3"/>
+            <text class="t2 sm">%</text>
+          </view>
         </view>
-      </view>
+      </block>
+
+      <!-- 操作按钮：邀请模式（双打） -->
+      <block wx:if="{{order.status==='in_progress'}}">
+        <button class="btn btn-primary" style="width:100%;margin-bottom:12rpx"
+          loading="{{taking}}" disabled="{{!selectedPartner}}" bindtap="confirmInvite">
+          {{selectedPartner ? '邀请「'+selectedPartner.nickname+'」为搭档' : '请先选择搭档'}}
+        </button>
+      </block>
+      <!-- 操作按钮：接单模式（双打） -->
+      <block wx:else>
+        <button wx:if="{{selectedPartner}}" class="btn btn-primary" style="width:100%;margin-bottom:12rpx"
+          loading="{{taking}}" bindtap="confirmTake" data-withpartner="{{true}}">
+          与「{{selectedPartner.nickname}}」一起接单
+        </button>
+        <button class="btn btn-ghost" style="width:100%"
+          loading="{{taking}}" bindtap="confirmTake" data-withpartner="{{false}}">
+          单独接单
+        </button>
+      </block>
     </block>
 
-    <!-- 操作按钮：邀请模式 -->
-    <block wx:if="{{order.status==='in_progress'}}">
-      <button class="btn btn-primary" style="width:100%;margin-bottom:12rpx"
-        loading="{{taking}}" disabled="{{!selectedPartner}}" bindtap="confirmInvite">
-        {{selectedPartner ? '邀请「'+selectedPartner.nickname+'」为搭档' : '请先选择搭档'}} 总裁贝
-      </button>
-    </block>
-    <!-- 操作按钮：接单模式 -->
+    <!-- 普通单：直接接单 -->
     <block wx:else>
-      <button wx:if="{{selectedPartner}}" class="btn btn-primary" style="width:100%;margin-bottom:12rpx"
-        loading="{{taking}}" bindtap="confirmTake" data-withpartner="{{true}}">
-        与「{{selectedPartner.nickname}}」一起接单
-      </button>
-      <button class="btn btn-ghost" style="width:100%"
+      <button class="btn btn-primary" style="width:100%"
         loading="{{taking}}" bindtap="confirmTake" data-withpartner="{{false}}">
-        单独接单
+        确认接单
       </button>
     </block>
   </view>

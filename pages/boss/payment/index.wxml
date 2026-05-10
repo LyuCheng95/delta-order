@@ -25,10 +25,6 @@
         <text class="t2 sm">💎 总裁贝余额</text>
         <text class="bold {{sufficient?'':'text-danger'}}">{{balanceZb}} 总裁贝</text>
       </view>
-      <view wx:if="{{!sufficient}}" style="margin-top:16rpx;display:flex;align-items:center;gap:16rpx">
-        <text class="t2 sm" style="color:#ff4d4d;flex:1">余额不足，请先充值</text>
-        <view class="btn-sm btn-primary" bindtap="goRecharge">去充值</view>
-      </view>
     </view>
 
   </view>
@@ -36,14 +32,18 @@
   <!-- 底部操作 -->
   <view class="bottom-bar">
     <button
+      wx:if="{{sufficient}}"
       class="btn btn-primary"
       style="width:100%"
       loading="{{paying}}"
-      disabled="{{!sufficient}}"
       bindtap="onPayWithBalance"
-    >
-      {{sufficient ? '使用 ' + order.totalYuan + ' 总裁贝 支付' : '总裁贝余额不足'}}
-    </button>
+    >使用 {{order.totalYuan}} 总裁贝 支付</button>
+    <button
+      wx:else
+      class="btn btn-primary"
+      style="width:100%"
+      bindtap="goRecharge"
+    >余额不足，去充值</button>
     <button class="btn btn-ghost" style="width:100%;margin-top:12rpx" bindtap="onCancel">取消订单</button>
   </view>
 </view>
