@@ -131,8 +131,8 @@ async function createRechargeOrder(openid, event) {
   }
   const signData  = Object.keys(signParams).sort().map(k => `${k}=${signParams[k]}`).join('&')
   const signature = crypto.createHmac('sha256', VP_APP_KEY).update(signData).digest('hex')
-  const paySig    = pfKey   // MD5(pf + appKey)
-  const mode      = '1'
+  const paySig    = pfKey                // MD5(pf + appKey)
+  const mode      = 'short_series_coin' // 虚拟货币充值（另一个有效值：short_series_goods 道具直购）
 
   return {
     code: 0,
