@@ -123,6 +123,7 @@ Page({
   onShow() {
     this._loadIosMarkupConfig()
     this._refreshCurrent()
+    this._checkUnread()
   },
 
   // 加载 iOS 加价开关，同时动态更新导航 tab
