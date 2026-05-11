@@ -1,6 +1,5 @@
 const { wallet, payment, config } = require('../../../utils/cloud')
 const { fen2zb } = require('../../../utils/constants')
-const { openEnterpriseCustomerService } = require('../../../utils/customerService')
 
 const PRESETS = [100, 300, 500, 1000, 2000, 5000]
 const STATUS_LABEL = { pending_payment: '处理中', approved: '✅ 已到账', rejected: '❌ 已失败' }
@@ -83,15 +82,19 @@ Page({
     const amt = Number(this.data.amount)
     if (!amt || amt < 1) { wx.showToast({ title: '最少充值 1 总裁贝', icon: 'none' }); return }
 
-    // iOS + toggle OFF → direct to customer service for proxy recharge
+    // iOS + toggle OFF → show customer service QR code
     if (this.data.platform === 'ios' && !this.data.iosMarkupEnabled) {
-      wx.showModal({
-        title: 'iOS 暂不支持直接充值',
-        content: '请联系客服为您处理充值',
-        confirmText: '联系客服',
-        cancelText: '取消',
-        success: r => { if (r.confirm) openEnterpriseCustomerService() }
-      })
+      try {
+        const res = await config.get('cs_qr')
+        const url = res && res.value
+        if (url) {
+          wx.previewImage({ urls: [url], current: url })
+        } else {
+          wx.showToast({ title: '请联系客服充值', icon: 'none' })
+        }
+      } catch (_) {
+        wx.showToast({ title: '请联系客服充值', icon: 'none' })
+      }
       return
     }
 
