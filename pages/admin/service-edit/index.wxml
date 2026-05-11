@@ -66,6 +66,16 @@
       </view>
       <switch checked="{{needs_co_hunter}}" bindchange="onCoHunterChange" color="#00E5FF" />
     </view>
+
+    <view class="se-divider"/>
+
+    <view class="se-field se-field--switch">
+      <view>
+        <text class="se-label" style="margin-bottom:4rpx">每人限购一次</text>
+        <text class="se-sublabel">开启后每位用户只能购买一次（适用于体验单）</text>
+      </view>
+      <switch checked="{{max_per_user === 1}}" bindchange="onMaxPerUserChange" color="#00E5FF" />
+    </view>
   </view>
 
   <!-- ══ 下单表单字段 ══ -->

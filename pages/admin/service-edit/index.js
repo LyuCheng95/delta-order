@@ -55,6 +55,7 @@ Page({
 
     is_active: true,
     needs_co_hunter: true,
+    max_per_user: 0,
     fieldTypes: FIELD_TYPES,
     formFields: [],
     saving: false
@@ -108,6 +109,7 @@ Page({
 
       is_active: data.is_active !== false,
       needs_co_hunter: data.needs_co_hunter !== false,
+      max_per_user: data.max_per_user || 0,
       formFields: fieldsToUI(data.form_fields || [])
     })
   },
@@ -117,8 +119,9 @@ Page({
   onDesc(e)         { this.setData({ description: e.detail.value }) },
   onPrice(e)        { this.setData({ priceYuan: e.detail.value }) },
   onUnit(e)         { this.setData({ price_unit: e.detail.value }) },
-  onActiveChange(e)    { this.setData({ is_active: e.detail.value }) },
-  onCoHunterChange(e)  { this.setData({ needs_co_hunter: e.detail.value }) },
+  onActiveChange(e)      { this.setData({ is_active: e.detail.value }) },
+  onCoHunterChange(e)    { this.setData({ needs_co_hunter: e.detail.value }) },
+  onMaxPerUserChange(e)  { this.setData({ max_per_user: e.detail.value ? 1 : 0 }) },
 
   // ── 表单字段编辑 ──
   addField() {
@@ -165,7 +168,7 @@ Page({
   },
 
   async onSave() {
-    const { id, catIds, catIndex, name, description, priceYuan, price_unit, is_active, needs_co_hunter, formFields } = this.data
+    const { id, catIds, catIndex, name, description, priceYuan, price_unit, is_active, needs_co_hunter, max_per_user, formFields } = this.data
     if (!catIds.length) { wx.showToast({ title: '请先新增分类', icon: 'none' }); return }
     if (!name.trim())   { wx.showToast({ title: '请填写服务名称', icon: 'none' }); return }
     const y = parseFloat(priceYuan)
@@ -186,6 +189,7 @@ Page({
         price_unit: price_unit || '次',
         is_active,
         needs_co_hunter,
+        max_per_user: max_per_user || 0,
         form_fields: uiToFields(formFields)
       }
       if (id) payload._id = id

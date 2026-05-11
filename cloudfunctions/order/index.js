@@ -122,6 +122,13 @@ async function createOrder(openid, event) {
   if (!svc) throw new Error('服务不存在')
   if (svc.is_active === false) throw new Error('该服务已下架')
 
+  if (svc.max_per_user > 0) {
+    const { data: prev } = await db.collection('orders')
+      .where({ boss_openid: openid, service_id, status: db.command.nin(['cancelled', 'refunded', 'deleted']) })
+      .limit(1).get()
+    if (prev.length > 0) throw new Error('该服务每人限购一次')
+  }
+
   const catRes = await db.collection('categories').doc(svc.category_id).get()
   if (!catRes.data || catRes.data.is_active === false) throw new Error('该分类已下架')
 

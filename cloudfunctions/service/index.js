@@ -148,7 +148,7 @@ async function upsertCategory(openid, event) {
 // 新增/更新服务
 async function upsertService(openid, event) {
   await requireAdmin(openid)
-  const { _id, category_id, name, description, price, price_unit, form_fields, sort_order, is_active, price_modifiers, needs_co_hunter } = event
+  const { _id, category_id, name, description, price, price_unit, form_fields, sort_order, is_active, price_modifiers, needs_co_hunter, max_per_user } = event
 
   if (_id) {
     const { data: existing } = await db.collection('services').doc(_id).get()
@@ -168,6 +168,7 @@ async function upsertService(openid, event) {
       sort_order: sort_order !== undefined ? (Number(sort_order) || 99) : (existing.sort_order || 99),
       is_active: is_active !== undefined ? (is_active !== false) : (existing.is_active !== false),
       needs_co_hunter: needs_co_hunter !== undefined ? !!needs_co_hunter : (existing.needs_co_hunter || false),
+      max_per_user: max_per_user !== undefined ? (Number(max_per_user) || 0) : (existing.max_per_user || 0),
       updated_at: db.serverDate()
     }
     if (price_modifiers !== undefined) payload.price_modifiers = price_modifiers
@@ -189,6 +190,7 @@ async function upsertService(openid, event) {
     sort_order: Number(sort_order) || 99,
     is_active: is_active !== false,
     needs_co_hunter: !!needs_co_hunter,
+    max_per_user: Number(max_per_user) || 0,
     created_at: db.serverDate(),
     updated_at: db.serverDate()
   }
