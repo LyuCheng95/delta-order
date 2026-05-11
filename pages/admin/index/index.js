@@ -126,6 +126,8 @@ Page({
     this._checkUnread()
   },
 
+  _checkUnread() {},
+
   // 加载 iOS 加价开关，同时动态更新导航 tab
   async _loadIosMarkupConfig() {
     try {
