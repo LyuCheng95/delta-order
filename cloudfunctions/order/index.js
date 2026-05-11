@@ -6,7 +6,7 @@ const _    = db.command
 
 async function notifyWxWork(text) {
   try {
-    const cfg = await db.collection('configs').where({ key: 'wxwork_webhook' }).limit(1).get()
+    const cfg = await db.collection('app_config').where({ key: 'wxwork_webhook' }).limit(1).get()
     const url = cfg.data && cfg.data[0] && cfg.data[0].value
     if (!url) return
     const body = JSON.stringify({ msgtype: 'text', text: { content: text } })
