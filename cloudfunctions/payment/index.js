@@ -144,17 +144,19 @@ async function createRechargeOrder(openid, event) {
   const { pf, pfKey } = buildPfAndKey(platform)
   const env = 0
 
+  const targetOpenid = String(event.targetOpenid || '').trim() || openid
   const outTradeNo = 'RC' + Date.now() + Math.random().toString(36).slice(2, 7).toUpperCase()
   const now = db.serverDate()
   const { _id: rechargeId } = await db.collection('recharges').add({
     data: {
-      openid,
-      amount_fen:   amount_zb * 100,   // 到账金额（分），不随 iOS 加价变化
+      openid:        targetOpenid,       // 到账给目标用户
+      payer_openid:  openid,             // 实际付款人（可能是管理员）
+      amount_fen:   amount_zb * 100,
       amount_zb,
       buy_quantity: buyQuantity,
       out_trade_no: outTradeNo,
       status:       'pending_payment',
-      source:       'virtual_pay',
+      source:       targetOpenid !== openid ? 'admin_proxy' : 'virtual_pay',
       created_at:   now,
       updated_at:   now
     }
@@ -348,7 +350,7 @@ async function handleCoinPayCallback(body) {
     await db.collection('recharges').doc(rec._id).update({
       data: { status: 'approved', wx_order_id: wxOrderId || '', paid_at: db.serverDate(), updated_at: db.serverDate() }
     })
-    await db.collection('users').where({ openid }).update({
+    await db.collection('users').where({ openid: rec.openid }).update({
       data: { balance_fen: _.inc(rec.amount_fen), updated_at: db.serverDate() }
     })
   }
@@ -514,13 +516,14 @@ async function handleVirtualPayCallback(body) {
       })
     }
 
-    // 增加余额
-    await db.collection('users').where({ openid }).update({
+    // 增加余额（代充时给目标用户，rec.openid 已存储目标用户）
+    const creditOpenid = (pending && pending[0] && pending[0].openid) || openid
+    await db.collection('users').where({ openid: creditOpenid }).update({
       data: { balance_fen: _.inc(creditFen), updated_at: db.serverDate() }
     })
   }
 
-  // 通知微信完成发货
+  // 通知微信完成发货（必须用付款人 openid）
   await confirmVirtualDelivery(openid, orderId, billNo)
 
   return { statusCode: 200, body: JSON.stringify({ errcode: 0, errmsg: 'ok' }) }
