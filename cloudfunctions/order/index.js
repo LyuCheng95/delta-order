@@ -1,7 +1,28 @@
 const cloud = require('wx-server-sdk')
+const https = require('https')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db   = cloud.database()
 const _    = db.command
+
+async function notifyWxWork(text) {
+  try {
+    const cfg = await db.collection('configs').where({ key: 'wxwork_webhook' }).limit(1).get()
+    const url = cfg.data && cfg.data[0] && cfg.data[0].value
+    if (!url) return
+    const body = JSON.stringify({ msgtype: 'text', text: { content: text } })
+    await new Promise((resolve, reject) => {
+      const u = new URL(url)
+      const req = https.request(
+        { hostname: u.hostname, path: u.pathname + u.search, method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } },
+        res => { res.resume(); resolve() }
+      )
+      req.on('error', reject)
+      req.write(body)
+      req.end()
+    })
+  } catch (_) {}
+}
 
 const ROLES_ARR = ['boss', 'hunter', 'admin']
 function normalizeRole(r) {
@@ -161,6 +182,16 @@ async function createOrder(openid, event) {
   }
 
   const res = await db.collection('orders').add({ data: order })
+
+  if (order.status === 'paid') {
+    const svcName = order.service_snapshot.service_name || ''
+    const boss = order.boss_snapshot.nickname || '玩家'
+    const amount = (order.total_amount / 100).toFixed(0)
+    const time = order.preferred_time ? `\n预约时间：${order.preferred_time}` : ''
+    const designated = preferred_hunter_openid ? '\n⚠️ 指定陪玩师' : ''
+    notifyWxWork(`🎮 新订单！\n服务：${svcName}\n老板：${boss}  金额：${amount}R${time}${designated}`)
+  }
+
   return { code: 0, data: { ...order, _id: res._id } }
 }
 
