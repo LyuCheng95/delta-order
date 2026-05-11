@@ -119,6 +119,7 @@ exports.main = async (event, context) => {
       case 'getHunterPublic':      return await getHunterPublic(OPENID, event)
       case 'devSeedMockHunters':    return await devSeedMockHunters()
       case 'devDeleteMockHunters':  return await devDeleteMockHunters()
+      case 'searchUsersByNickname': return await searchUsersByNickname(OPENID, event)
       default: return { code: -1, msg: '未知操作' }
     }
   } catch (e) {
@@ -701,6 +702,24 @@ async function devSeedMockHunters() {
     }
   }
   return { code: 0, data: { results } }
+}
+
+async function searchUsersByNickname(adminOpenid, event) {
+  await requireAdmin(adminOpenid)
+  const kw = String(event.keyword || '').trim()
+  if (!kw) return { code: 0, data: [] }
+  const { data } = await db.collection('users')
+    .where(db.command.expr(
+      db.command.aggregate.regexMatch({
+        input: '$nickname',
+        regex: kw,
+        options: 'i'
+      })
+    ))
+    .field({ openid: true, nickname: true, avatar_url: true, contact: true })
+    .limit(20)
+    .get()
+  return { code: 0, data }
 }
 
 async function devDeleteMockHunters() {

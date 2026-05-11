@@ -73,7 +73,8 @@ const auth    = {
   setHunterAdminHidden:  p => call('auth','setHunterAdminHidden',p),
   listHuntersForBoss:  () => call('auth','listHuntersForBoss'),
   recordHunterView:    p  => call('auth','recordHunterView',p),
-  getHunterPublic:     p  => call('auth','getHunterPublic',p)
+  getHunterPublic:          p => call('auth','getHunterPublic',p),
+  searchUsersByNickname:    p => call('auth','searchUsersByNickname',p)
 }
 const dev = {
   grantTripleRoles:    () => call('auth', 'grantTripleRolesIfSoleUser', {}),
