@@ -709,13 +709,7 @@ async function searchUsersByNickname(adminOpenid, event) {
   const kw = String(event.keyword || '').trim()
   if (!kw) return { code: 0, data: [] }
   const { data } = await db.collection('users')
-    .where(db.command.expr(
-      db.command.aggregate.regexMatch({
-        input: '$nickname',
-        regex: kw,
-        options: 'i'
-      })
-    ))
+    .where({ nickname: db.RegExp({ regexp: kw, options: 'i' }) })
     .field({ openid: true, nickname: true, avatar_url: true, contact: true })
     .limit(20)
     .get()
