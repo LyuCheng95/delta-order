@@ -929,43 +929,20 @@ Page({
     const amt = Number(proxyAmount)
     if (!amt || amt < 1) { wx.showToast({ title: '充值金额至少 1 总裁贝', icon: 'none' }); return }
     if (proxying) return
-    this.setData({ proxying: true })
-    try {
-      const loginRes = await wx.login()
-      const loginCode = loginRes && loginRes.code
-      const orderRes = await payment.createRechargeOrder({
-        amount_zb: amt,
-        platform: 'android',
-        loginCode,
-        targetOpenid: proxySelected.openid
-      })
-      const { rechargeId, signData, signature, paySig, mode } = orderRes || {}
-      await new Promise((resolve, reject) => {
-        wx.requestVirtualPayment({ signData, signature, paySig, mode, success: resolve, fail: reject })
-      })
-      wx.showLoading({ title: '确认到账中…', mask: true })
-      let credited = false
-      for (let i = 0; i < 8; i++) {
-        await new Promise(r => setTimeout(r, 1500))
+    wx.showModal({
+      title: '确认入账',
+      content: `为「${proxySelected.nickname}」充值 ${amt} 总裁贝？`,
+      success: async r => {
+        if (!r.confirm) return
+        this.setData({ proxying: true })
         try {
-          const { status } = await payment.queryRecharge({ rechargeId })
-          if (status === 'approved') { credited = true; break }
-          if (status === 'rejected') break
-        } catch (_) {}
+          await wallet.adminCreditUser({ targetOpenid: proxySelected.openid, amount_zb: amt })
+          wx.showToast({ title: '入账成功', icon: 'success' })
+          this.setData({ proxyNickname: '', proxyResults: [], proxySelected: null, proxyAmount: '' })
+        } catch (_) {} finally {
+          this.setData({ proxying: false })
+        }
       }
-      wx.hideLoading()
-      if (credited) {
-        wx.showToast({ title: `已为「${proxySelected.nickname}」充值 ${amt} 总裁贝`, icon: 'success' })
-        this.setData({ proxyNickname: '', proxyResults: [], proxySelected: null, proxyAmount: '' })
-      } else {
-        wx.showModal({ title: '处理中', content: '支付完成，正在到账，请稍后刷新充值记录确认。', showCancel: false })
-      }
-    } catch (e) {
-      wx.hideLoading()
-      const msg = (e && (e.errMsg || e.message)) || ''
-      if (!msg.includes('cancel')) wx.showToast({ title: msg || '操作失败', icon: 'none' })
-    } finally {
-      this.setData({ proxying: false })
-    }
+    })
   }
 })
