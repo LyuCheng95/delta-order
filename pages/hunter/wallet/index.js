@@ -5,7 +5,6 @@ Page({
   data: {
     summary: { availableYuan: '0.00', earnedYuan: '0.00', pendingYuan: '0.00', paidOutYuan: '0.00' },
     records: [],
-    wechatId: '',
     amountYuan: '',
     amountPlaceholder: '最少 1 元',
     submitting: false,
@@ -40,10 +39,6 @@ Page({
     }
   },
 
-  onWechatId(e) {
-    this.setData({ wechatId: e.detail.value })
-  },
-
   onAmount(e) {
     this.setData({ amountYuan: e.detail.value })
   },
@@ -64,11 +59,6 @@ Page({
   },
 
   async submit() {
-    const wechatId = this.data.wechatId.trim()
-    if (wechatId.length < 2) {
-      wx.showToast({ title: '请填写收款微信号', icon: 'none' })
-      return
-    }
     const yuan = parseFloat(this.data.amountYuan)
     if (Number.isNaN(yuan) || yuan < 1) {
       wx.showToast({ title: '至少提现 1 元', icon: 'none' })
@@ -77,7 +67,7 @@ Page({
     const amount_fen = Math.round(yuan * 100)
     this.setData({ submitting: true })
     try {
-      await wallet.requestWithdraw({ amount_fen, wechat_id: wechatId })
+      await wallet.requestWithdraw({ amount_fen })
       wx.showToast({ title: '申请已提交，等待管理员打款', icon: 'success' })
       this.setData({ amountYuan: '', amountPlaceholder: '最少 1 元' })
       await this._load()

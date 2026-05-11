@@ -98,7 +98,7 @@ Page({
     try {
       const [cats, svcsRaw] = await Promise.all([
         service.listCats(),
-        service.listSvcsAdmin({}).catch(() => [])
+        service.listAllForHunter().catch(() => [])
       ])
       const selected = new Set(this.data.serviceTags)
       const allGroups = (cats || []).map(cat => {

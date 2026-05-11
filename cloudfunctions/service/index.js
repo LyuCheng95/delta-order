@@ -48,6 +48,7 @@ exports.main = async (event, context) => {
       case 'getConfig':           return await getConfig(event)
       case 'setConfig':           return await setConfig(OPENID, event)
       case 'setAllCoHunter':      return await setAllCoHunter(OPENID, event)
+      case 'listAllForHunter':    return await listAllForHunter(OPENID)
       default: return { code: -1, msg: '未知操作' }
     }
   } catch(e) {
@@ -289,6 +290,11 @@ async function getConfig(event) {
   await ensureAppConfigCol()
   const { data } = await db.collection('app_config').where({ key }).limit(1).get()
   return { code: 0, data: data[0] || null }
+}
+
+async function listAllForHunter(openid) {
+  const { data: svcs } = await db.collection('services').where({ is_active: true }).limit(1000).get()
+  return { code: 0, data: svcs }
 }
 
 async function setAllCoHunter(openid, event) {

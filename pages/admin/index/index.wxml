@@ -242,6 +242,12 @@
           </button>
         </view>
         <view class="card" style="margin-bottom:24rpx">
+          <text class="bold sm" style="display:block;margin-bottom:8rpx">企业微信订单通知</text>
+          <text class="t2 xs" style="display:block;margin-bottom:16rpx;color:var(--text-3)">下单后自动发消息到企业微信群，填入群机器人 Webhook URL</text>
+          <input class="input-field" placeholder="https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=..." value="{{wxworkWebhook}}" bindinput="onWxworkWebhookInput" style="margin-bottom:16rpx"/>
+          <button class="btn btn-primary" style="width:100%" loading="{{savingWxworkWebhook}}" bindtap="saveWxworkWebhook">保存</button>
+        </view>
+        <view class="card" style="margin-bottom:24rpx">
           <text class="bold sm" style="display:block;margin-bottom:8rpx">开发工具</text>
           <text class="t2 xs" style="display:block;margin-bottom:20rpx;color:var(--text-3)">批量操作、测试数据等</text>
           <button class="btn btn-ghost" style="width:100%" bindtap="goDevtest">进入开发工具</button>

@@ -117,7 +117,9 @@ Page({
     hRefreshing: false,
 
     csQrUrl: '',
-    csQrUploading: false
+    csQrUploading: false,
+    wxworkWebhook: '',
+    savingWxworkWebhook: false
   },
 
   onShow() {
@@ -820,9 +822,30 @@ Page({
 
   async _loadSettings() {
     try {
-      const res = await config.get('cs_qr')
-      this.setData({ csQrUrl: (res && res.value) || '' })
+      const [csRes, webhookRes] = await Promise.all([
+        config.get('cs_qr').catch(() => null),
+        config.get('wxwork_webhook').catch(() => null)
+      ])
+      this.setData({
+        csQrUrl: (csRes && csRes.value) || '',
+        wxworkWebhook: (webhookRes && webhookRes.value) || ''
+      })
     } catch (_) {}
+  },
+
+  onWxworkWebhookInput(e) { this.setData({ wxworkWebhook: e.detail.value }) },
+
+  async saveWxworkWebhook() {
+    const url = this.data.wxworkWebhook.trim()
+    this.setData({ savingWxworkWebhook: true })
+    try {
+      await config.set('wxwork_webhook', url)
+      wx.showToast({ title: '已保存', icon: 'success' })
+    } catch (e) {
+      wx.showToast({ title: e.message || '保存失败', icon: 'none' })
+    } finally {
+      this.setData({ savingWxworkWebhook: false })
+    }
   },
 
   goDevtest() {
